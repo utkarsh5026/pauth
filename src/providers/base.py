@@ -1,5 +1,10 @@
-from secrets import token_urlsafe
+import json
+import secrets
 from urllib.parse import urlencode
+
+import requests
+
+from src.utils import OAuthError
 
 
 class BaseProvider:
@@ -28,19 +33,25 @@ class BaseProvider:
         self.authorization_endpoint = None
         self.token_endpoint = None
         self.revocation_endpoint = None
+        self.state = None
 
-    def exchange_code_for_access_token(self, code: str) -> dict:
+    def exchange_code_for_access_token(self, code: str, **kwargs) -> dict:
         raise NotImplementedError()
 
-    def prepare_auth_url(self, state: str, additional_params: dict[str, str]):
+    def exchange_code_for_access_token_pkce(self, code: str, code_verifier: str):
+        raise NotImplementedError()
+
+    def prepare_auth_url(self, additional_params: dict[str, str] = None
+                         ):
         scopes = self.scopes if self.scopes else []
         additional_params = additional_params if additional_params else {}
+        self.state = self.create_state()
         base_params = {
             'client_id': self.client_id,
             'redirect_uri': self.redirect_uri,
             'response_type': 'code',
             'scope': ' '.join(scopes),
-            'state': state
+            'state': self.state
         }
 
         for key, value in additional_params.items():
@@ -55,4 +66,14 @@ class BaseProvider:
 
     @staticmethod
     def create_state() -> str:
-        return token_urlsafe(32)
+        return secrets.token_urlsafe(32)
+
+    @staticmethod
+    def try_reading_response(response: requests.Response | None) -> dict[str]:
+        if response and response.status_code == 200:
+            try:
+                return json.loads(response.json())
+            except ValueError:
+                return {}
+        else:
+            raise OAuthError("Response from the server was not successful")
