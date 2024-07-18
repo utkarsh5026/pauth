@@ -1,3 +1,4 @@
+from secrets import token_urlsafe
 from urllib.parse import urlencode
 
 
@@ -51,3 +52,7 @@ class BaseProvider:
         if not self.authorization_endpoint:
             raise ValueError("Authorization endpoint is not set for this provider")
         return self.authorization_endpoint
+
+    @staticmethod
+    def create_state() -> str:
+        return token_urlsafe(32)
