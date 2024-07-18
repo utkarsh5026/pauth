@@ -1,0 +1,2 @@
+class OAuthError(Exception):
+    pass

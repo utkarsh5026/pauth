@@ -4,7 +4,7 @@ from typing import Any
 import requests
 
 
-def make_request(method: str, url: str, params: Any = None, headers: dict[str] = None,
+def make_request(method: str, url: str, params: Any = None, headers: dict[str, str | bytes] = None,
                  data: Any = None) -> requests.Response | None:
     """
     Sends a request to the specified URL with the given method, headers, and data.
