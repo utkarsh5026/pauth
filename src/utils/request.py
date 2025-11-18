@@ -1,13 +1,14 @@
 import logging
-from typing import Any, Optional
 import requests
+from typing import Any, Optional, Literal
+from collections.abc import Mapping
 
 
 def make_request(
-    method: str,
+    method: Literal["GET", "POST", "PUT", "DELETE", "PATCH"],
     url: str,
     params: Any = None,
-    headers: Optional[dict[str, str | bytes]] = None,
+    headers: Optional[Mapping[str, str | bytes]] = None,
     data: Any = None,
 ) -> requests.Response | None:
     """
