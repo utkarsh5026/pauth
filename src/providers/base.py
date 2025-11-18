@@ -39,12 +39,47 @@ class BaseProvider:
         self.state = None
 
     def exchange_code_for_access_token(self, code: str, **kwargs) -> dict:
+        """
+        Exchange an authorization code for an access token.
+
+        Args:
+            code (str): The authorization code received from the OAuth provider.
+            **kwargs: Additional provider-specific parameters.
+
+        Returns:
+            dict: A dictionary containing the access token and related information.
+
+        Raises:
+            NotImplementedError: This method must be implemented by subclasses.
+        """
         raise NotImplementedError()
 
     def exchange_code_for_access_token_pkce(self, code: str, code_verifier: str):
+        """
+        Exchange an authorization code for an access token using PKCE flow.
+
+        Args:
+            code (str): The authorization code received from the OAuth provider.
+            code_verifier (str): The code verifier used in the PKCE flow.
+
+        Returns:
+            dict: A dictionary containing the access token and related information.
+
+        Raises:
+            NotImplementedError: This method must be implemented by subclasses.
+        """
         raise NotImplementedError()
 
     def prepare_auth_url(self, additional_params: Optional[dict[str, str]] = None):
+        """
+        Prepare the authorization URL for the OAuth flow.
+
+        Args:
+            additional_params (Optional[dict[str, str]]): Additional query parameters to include in the URL.
+
+        Returns:
+            str: The complete authorization URL with all required parameters.
+        """
         scopes = self.scopes if self.scopes else []
         additional_params = additional_params if additional_params else {}
         self.state = self.create_state()
@@ -62,6 +97,15 @@ class BaseProvider:
         return f"{self.get_auth_endpoint()}?{urlencode(base_params)}"
 
     def get_auth_endpoint(self):
+        """
+        Get the authorization endpoint URL.
+
+        Returns:
+            str: The authorization endpoint URL.
+
+        Raises:
+            ValueError: If the authorization endpoint is not set.
+        """
         if not self.authorization_endpoint:
             raise ValueError("Authorization endpoint is not set for this provider")
         return self.authorization_endpoint
@@ -75,6 +119,23 @@ class BaseProvider:
         data: Any = None,
         err_msg: str = "OAuth request failed",
     ):
+        """
+        Make an OAuth request to the specified URL.
+
+        Args:
+            method (Literal["GET", "POST", "PUT", "DELETE", "PATCH"]): The HTTP method to use.
+            url (str): The URL to send the request to.
+            params (Any, optional): Query parameters for the request.
+            headers (Optional[Mapping[str, str | bytes]], optional): HTTP headers for the request.
+            data (Any, optional): Request body data.
+            err_msg (str, optional): Custom error message if the request fails. Defaults to "OAuth request failed".
+
+        Returns:
+            dict: The parsed JSON response from the server.
+
+        Raises:
+            PAuthError: If the request fails or returns a non-200 status code.
+        """
         response = make_request(
             method=method, url=url, params=params, headers=headers, data=data
         )
@@ -83,6 +144,19 @@ class BaseProvider:
     def validate_response_or_raise(
         self, response: requests.Response | None, err_msg: str
     ) -> dict[str, str]:
+        """
+        Validate the HTTP response and parse JSON or raise an error.
+
+        Args:
+            response (requests.Response | None): The HTTP response object.
+            err_msg (str): The error message to use if validation fails.
+
+        Returns:
+            dict[str, str]: The parsed JSON response.
+
+        Raises:
+            PAuthError: If the response is invalid or status code is not 200.
+        """
         if response and response.status_code == 200:
             try:
                 return json.loads(response.json())
@@ -93,10 +167,28 @@ class BaseProvider:
 
     @staticmethod
     def create_state() -> str:
+        """
+        Create a secure random state parameter for CSRF protection.
+
+        Returns:
+            str: A URL-safe random string.
+        """
         return secrets.token_urlsafe(32)
 
     @staticmethod
     def try_reading_response(response: requests.Response | None) -> dict[str, str]:
+        """
+        Attempt to read and parse the JSON response.
+
+        Args:
+            response (requests.Response | None): The HTTP response object.
+
+        Returns:
+            dict[str, str]: The parsed JSON response.
+
+        Raises:
+            PAuthError: If the response status is not 200.
+        """
         if response and response.status_code == 200:
             try:
                 return json.loads(response.json())
