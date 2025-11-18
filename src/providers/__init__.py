@@ -3,6 +3,7 @@ from .facebook import FacebookProvider
 from .github import GithubProvider
 from .google import GoogleProvider
 from .microsoft import MicrosoftProvider
+from .linkedin import LinkedInProvider
 
 __all__ = [
     "BaseProvider",
@@ -10,4 +11,5 @@ __all__ = [
     "GithubProvider",
     "GoogleProvider",
     "MicrosoftProvider",
+    "LinkedInProvider",
 ]
