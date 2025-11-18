@@ -2,8 +2,10 @@ import json
 import secrets
 import requests
 from urllib.parse import urlencode
-from typing import Optional
+from typing import Optional, Literal, Any
+from collections.abc import Mapping
 from exceptions import PAuthError
+from utils import make_request
 
 
 class BaseProvider:
@@ -63,6 +65,31 @@ class BaseProvider:
         if not self.authorization_endpoint:
             raise ValueError("Authorization endpoint is not set for this provider")
         return self.authorization_endpoint
+
+    def oauth(
+        self,
+        method: Literal["GET", "POST", "PUT", "DELETE", "PATCH"],
+        url: str,
+        params: Any = None,
+        headers: Optional[Mapping[str, str | bytes]] = None,
+        data: Any = None,
+        err_msg: str = "OAuth request failed",
+    ):
+        response = make_request(
+            method=method, url=url, params=params, headers=headers, data=data
+        )
+        return self.validate_response_or_raise(response, err_msg)
+
+    def validate_response_or_raise(
+        self, response: requests.Response | None, err_msg: str
+    ) -> dict[str, str]:
+        if response and response.status_code == 200:
+            try:
+                return json.loads(response.json())
+            except ValueError:
+                return {}
+        else:
+            raise PAuthError(message=err_msg)
 
     @staticmethod
     def create_state() -> str:

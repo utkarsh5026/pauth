@@ -1,6 +1,4 @@
 import base64
-from exceptions import PAuthError
-from utils import make_request
 from .base import BaseProvider
 
 
@@ -59,12 +57,13 @@ class GithubProvider(BaseProvider):
             "redirect_uri": self.redirect_uri,
         }
 
-        response = make_request("POST", self.token_endpoint, headers=headers, data=data)
-
-        if response:
-            return response.json()
-        else:
-            raise PAuthError("Failed to exchange code for access token")
+        return self.oauth(
+            "POST",
+            self.token_endpoint,
+            headers=headers,
+            data=data,
+            err_msg="Failed to exchange code for access token",
+        )
 
     def revoke_token(self, token: str) -> dict:
         """
@@ -90,17 +89,13 @@ class GithubProvider(BaseProvider):
 
         data = {"access_token": token}
 
-        response = make_request(
+        return self.oauth(
             "DELETE",
             self.revocation_endpoint.format(client_id=self.client_id),
             headers=headers,
             data=data,
+            err_msg="Failed to revoke token",
         )
-
-        if response is not None:
-            return response.json()
-        else:
-            raise PAuthError("Failed to revoke token")
 
     def get_user_info(self, access_token: str) -> dict:
         """
@@ -120,9 +115,9 @@ class GithubProvider(BaseProvider):
             "Accept": "application/vnd.github.v3+json",
         }
 
-        response = make_request("GET", self.user_info_endpoint, headers=headers)
-
-        if response:
-            return response.json()
-        else:
-            raise PAuthError("Failed to fetch user info")
+        return self.oauth(
+            "GET",
+            self.user_info_endpoint,
+            headers=headers,
+            err_msg="Failed to fetch user info",
+        )

@@ -1,5 +1,3 @@
-from utils import make_request
-from exceptions import PAuthError
 from .base import BaseProvider
 
 
@@ -53,9 +51,11 @@ class GoogleProvider(BaseProvider):
             "grant_type": "authorization_code",
         }
 
-        response = make_request("POST", self.token_endpoint, data=data)
-        return self.validate_response_or_raise(
-            response, "Failed to exchange code for access token"
+        return self.oauth(
+            method="POST",
+            url=self.token_endpoint,
+            data=data,
+            err_msg="Failed to exchange code for access token",
         )
 
     def refresh_token(self, refresh_token: str) -> dict:
@@ -78,8 +78,12 @@ class GoogleProvider(BaseProvider):
             "grant_type": "refresh_token",
         }
 
-        response = make_request("POST", self.token_endpoint, data=data)
-        return self.validate_response_or_raise(response, "Failed to refresh token")
+        return self.oauth(
+            method="POST",
+            url=self.token_endpoint,
+            data=data,
+            err_msg="Failed to refresh token",
+        )
 
     def revoke_token(self, token: str) -> dict:
         """
@@ -94,10 +98,12 @@ class GoogleProvider(BaseProvider):
         Raises:
             PAuthError: If token revocation fails
         """
-        response = make_request(
-            "POST", self.revocation_endpoint, params={"token": token}
+        return self.oauth(
+            method="POST",
+            url=self.revocation_endpoint,
+            params={"token": token},
+            err_msg="Failed to revoke token",
         )
-        return self.validate_response_or_raise(response, "Failed to revoke token")
 
     def get_user_info(self, access_token: str) -> dict:
         """
@@ -113,5 +119,9 @@ class GoogleProvider(BaseProvider):
             PAuthError: If fetching user info fails
         """
         headers = {"Authorization": f"Bearer {access_token}"}
-        response = make_request("GET", self.user_info_endpoint, headers=headers)
-        return self.validate_response_or_raise(response, "Failed to fetch user info")
+        return self.oauth(
+            method="GET",
+            url=self.user_info_endpoint,
+            headers=headers,
+            err_msg="Failed to fetch user info",
+        )
