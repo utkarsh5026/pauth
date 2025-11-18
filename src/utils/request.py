@@ -1,11 +1,15 @@
 import logging
-from typing import Any
-
+from typing import Any, Optional
 import requests
 
 
-def make_request(method: str, url: str, params: Any = None, headers: dict[str, str | bytes] = None,
-                 data: Any = None) -> requests.Response | None:
+def make_request(
+    method: str,
+    url: str,
+    params: Any = None,
+    headers: Optional[dict[str, str | bytes]] = None,
+    data: Any = None,
+) -> requests.Response | None:
     """
     Sends a request to the specified URL with the given method, headers, and data.
 
@@ -19,11 +23,9 @@ def make_request(method: str, url: str, params: Any = None, headers: dict[str, s
     """
 
     try:
-        response = requests.request(method=method,
-                                    url=url,
-                                    headers=headers,
-                                    data=data,
-                                    params=params)
+        response = requests.request(
+            method=method, url=url, headers=headers, data=data, params=params
+        )
         response.raise_for_status()
         return response.json()
     except requests.exceptions.RequestException as e:
