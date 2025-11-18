@@ -28,7 +28,7 @@ def make_request(
             method=method, url=url, headers=headers, data=data, params=params
         )
         response.raise_for_status()
-        return response.json()
+        return response
     except requests.exceptions.RequestException as e:
         logging.error(f"Error: {e}")
         return None
