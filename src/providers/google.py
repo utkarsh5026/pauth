@@ -6,14 +6,6 @@ from .base import BaseProvider
 class GoogleProvider(BaseProvider):
     """
     Google OAuth 2.0 provider implementation.
-
-    Supports:
-    - Authorization code flow
-    - Token exchange
-    - Token refresh
-    - Token revocation
-    - User info retrieval
-    - OpenID Connect
     """
 
     def __init__(
@@ -62,11 +54,9 @@ class GoogleProvider(BaseProvider):
         }
 
         response = make_request("POST", self.token_endpoint, data=data)
-
-        if response:
-            return response.json()
-        else:
-            raise PAuthError("Failed to exchange code for access token")
+        return self.validate_response_or_raise(
+            response, "Failed to exchange code for access token"
+        )
 
     def refresh_token(self, refresh_token: str) -> dict:
         """
@@ -89,11 +79,7 @@ class GoogleProvider(BaseProvider):
         }
 
         response = make_request("POST", self.token_endpoint, data=data)
-
-        if response:
-            return response.json()
-        else:
-            raise PAuthError("Failed to refresh token")
+        return self.validate_response_or_raise(response, "Failed to refresh token")
 
     def revoke_token(self, token: str) -> dict:
         """
@@ -108,14 +94,10 @@ class GoogleProvider(BaseProvider):
         Raises:
             PAuthError: If token revocation fails
         """
-        params = {"token": token}
-
-        response = make_request("POST", self.revocation_endpoint, params=params)
-
-        if response is not None:
-            return response.json()
-        else:
-            raise PAuthError("Failed to revoke token")
+        response = make_request(
+            "POST", self.revocation_endpoint, params={"token": token}
+        )
+        return self.validate_response_or_raise(response, "Failed to revoke token")
 
     def get_user_info(self, access_token: str) -> dict:
         """
@@ -131,10 +113,5 @@ class GoogleProvider(BaseProvider):
             PAuthError: If fetching user info fails
         """
         headers = {"Authorization": f"Bearer {access_token}"}
-
         response = make_request("GET", self.user_info_endpoint, headers=headers)
-
-        if response:
-            return response.json()
-        else:
-            raise PAuthError("Failed to fetch user info")
+        return self.validate_response_or_raise(response, "Failed to fetch user info")
