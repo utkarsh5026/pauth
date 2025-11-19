@@ -8,7 +8,7 @@ from typing import Type
 from src.providers import (
     BaseProvider,
     GoogleProvider,
-    GithubProvider,
+    GitHubProvider,
     FacebookProvider,
     TwitterProvider,
     MicrosoftProvider,
@@ -44,7 +44,7 @@ class Providers(Enum):
         """
         provider_map = {
             Providers.GOOGLE: GoogleProvider,
-            Providers.GITHUB: GithubProvider,
+            Providers.GITHUB: GitHubProvider,
             Providers.FACEBOOK: FacebookProvider,
             Providers.TWITTER: TwitterProvider,
             Providers.MICROSOFT: MicrosoftProvider,

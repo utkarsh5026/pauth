@@ -5,7 +5,6 @@ Main OAuth2 client implementation.
 from typing import Optional, Union
 from src.models import Providers, TokenResponse, UserInfo, OAuthSession
 from src.providers import BaseProvider
-from src.storage import BaseTokenStorage, MemoryTokenStorage
 from src.exceptions import ConfigurationError, TokenError, AuthorizationError
 from src.http import HTTPClient, AsyncHTTPClient
 
