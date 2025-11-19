@@ -146,16 +146,15 @@ class GitHubProvider(GitHubProviderMixin, BaseProvider):
         """Get GitHub's default scopes."""
         return ["read:user", "user:email"]
 
-    # =========================================================================
-    # SYNC METHODS
-    # =========================================================================
-
-    def exchange_code_for_access_token(self, code: str) -> dict[str, Any]:
+    def exchange_code_for_access_token(
+        self, code: str, code_verifier: Optional[str] = None
+    ) -> dict[str, Any]:
         """
         Exchange authorization code for access token (SYNC).
 
         Args:
             code: Authorization code from GitHub
+            code_verifier: Not used (GitHub doesn't support PKCE)
 
         Returns:
             dict: Token response with access_token, token_type, etc.
@@ -211,15 +210,17 @@ class GitHubProvider(GitHubProviderMixin, BaseProvider):
             error_message="Failed to revoke token",
         )
 
-        # GitHub returns empty response on success
         return {"success": True, **result}
 
-    async def aexchange_code_for_access_token(self, code: str) -> dict[str, Any]:
+    async def aexchange_code_for_access_token(
+        self, code: str, code_verifier: Optional[str] = None
+    ) -> dict[str, Any]:
         """
         Exchange authorization code for access token (ASYNC).
 
         Args:
             code: Authorization code from GitHub
+            code_verifier: Not used (GitHub doesn't support PKCE)
 
         Returns:
             dict: Token response with access_token, token_type, etc.

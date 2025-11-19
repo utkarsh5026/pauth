@@ -5,8 +5,12 @@ Stateless OAuth provider base class with unified sync/async support.
 from abc import ABC, abstractmethod
 from typing import Optional, Any
 from urllib.parse import urlencode
+import secrets
+import hashlib
+import base64
 from src.http import HTTPClient, AsyncHTTPClient, HTTPResponse, HttpMethod
 from src.exceptions import PAuthError
+from src.models.session import OAuthSession
 
 
 class BaseProviderMixin:
@@ -84,28 +88,33 @@ class BaseProviderMixin:
         except Exception as e:
             raise PAuthError(message=f"Failed to parse response: {e}")
 
+    def _generate_state(self) -> str:
+        """
+        Generate a secure random state parameter for CSRF protection.
+
+        Returns:
+            str: URL-safe random state token
+        """
+        return secrets.token_urlsafe(32)
+
+    def _generate_pkce_pair(self) -> tuple[str, str]:
+        """
+        Generate PKCE code verifier and code challenge pair.
+
+        Returns:
+            tuple[str, str]: (code_verifier, code_challenge)
+        """
+        code_verifier = secrets.token_urlsafe(64)
+        code_challenge = (
+            base64.urlsafe_b64encode(hashlib.sha256(code_verifier.encode()).digest())
+            .decode()
+            .rstrip("=")
+        )
+        return code_verifier, code_challenge
+
 
 class BaseProvider(BaseProviderMixin, ABC):
-    """
-    Attributes:
-        client_id (str): OAuth client ID
-        client_secret (str): OAuth client secret
-        redirect_uri (str): Registered redirect URI
-        scopes (list[str]): Default scopes for this provider
-        authorization_endpoint (str): Provider's authorization URL
-        token_endpoint (str): Provider's token exchange URL
-        revocation_endpoint (str): Provider's token revocation URL
-        user_info_endpoint (str): Provider's user info URL
-        http_client (HTTPClient): Sync HTTP client
-        async_http_client (AsyncHTTPClient): Async HTTP client
 
-    Class Attributes:
-        SUPPORTS_REFRESH (bool): Whether provider supports token refresh
-        SUPPORTS_REVOCATION (bool): Whether provider supports token revocation
-        SUPPORTS_PKCE (bool): Whether provider requires/supports PKCE
-    """
-
-    # Provider capability flags
     SUPPORTS_REFRESH = False
     SUPPORTS_REVOCATION = False
     SUPPORTS_PKCE = False
@@ -134,23 +143,37 @@ class BaseProvider(BaseProviderMixin, ABC):
         self.client_secret = client_secret
         self.redirect_uri = redirect_uri
         self.scopes = scopes or self._get_default_scopes()
-
-        if http_client is None:
-            from src.http import RequestsAdapter
-
-            http_client = RequestsAdapter()
-        self.http_client = http_client
-
-        if async_http_client is None:
-            from src.http import HttpxAdapter
-
-            async_http_client = HttpxAdapter()
-        self.async_http_client = async_http_client
+        self.__setup_client(http_client, async_http_client)
 
         self.authorization_endpoint: Optional[str] = None
         self.token_endpoint: Optional[str] = None
         self.revocation_endpoint: Optional[str] = None
         self.user_info_endpoint: Optional[str] = None
+
+    def __setup_client(
+        self,
+        http_client: Optional[HTTPClient],
+        async_http_client: Optional[AsyncHTTPClient],
+    ) -> None:
+        """
+        Setup sync and async HTTP clients.
+
+        Args:
+            http_client: Custom HTTP client or None
+            async_http_client: Custom async HTTP client or None
+        """
+        if http_client is None:
+            from src.http import RequestsAdapter
+
+            http_client = RequestsAdapter()
+
+        if async_http_client is None:
+            from src.http import HttpxAdapter
+
+            async_http_client = HttpxAdapter()
+
+        self.http_client = http_client
+        self.async_http_client = async_http_client
 
     def _get_default_scopes(self) -> list[str]:
         """
@@ -195,13 +218,71 @@ class BaseProvider(BaseProviderMixin, ABC):
 
         return f"{self.authorization_endpoint}?{urlencode(params)}"
 
+    def get_authorization_session(
+        self,
+        scopes: Optional[list[str]] = None,
+        additional_params: Optional[dict[str, Any]] = None,
+        nonce: Optional[str] = None,
+        metadata: Optional[dict[str, Any]] = None,
+    ) -> OAuthSession:
+        """
+        Create an OAuth authorization session with all required parameters.
+
+        This method generates the authorization URL along with state, PKCE parameters
+        (if supported), and packages everything into an OAuthSession object.
+
+        Args:
+            scopes: Scopes to request (uses default if None)
+            additional_params: Additional query parameters
+            nonce: Optional nonce for OpenID Connect
+            metadata: Optional custom metadata to store in session
+
+        Returns:
+            OAuthSession: Session object containing URL, state, PKCE params, etc.
+        """
+        if not self.authorization_endpoint:
+            raise ValueError(
+                f"Authorization endpoint not set for {self.__class__.__name__}"
+            )
+
+        state = self._generate_state()
+        if additional_params is None:
+            additional_params = {}
+
+        code_verifier: Optional[str] = None
+        code_challenge: Optional[str] = None
+
+        if self.SUPPORTS_PKCE:
+            code_verifier, code_challenge = self._generate_pkce_pair()
+            additional_params["code_challenge"] = code_challenge
+            additional_params["code_challenge_method"] = "S256"
+
+        # Build authorization URL
+        url = self.build_authorization_url(
+            state=state, scopes=scopes, additional_params=additional_params
+        )
+
+        # Create and return OAuthSession
+        return OAuthSession(
+            url=url,
+            state=state,
+            code_verifier=code_verifier,
+            code_challenge=code_challenge,
+            nonce=nonce,
+            scopes=scopes or self.scopes,
+            metadata=metadata or {},
+        )
+
     @abstractmethod
-    def exchange_code_for_access_token(self, code: str) -> dict[str, Any]:
+    def exchange_code_for_access_token(
+        self, code: str, code_verifier: Optional[str] = None
+    ) -> dict[str, Any]:
         """
         Exchange authorization code for access token (SYNC).
 
         Args:
             code: Authorization code from callback
+            code_verifier: Optional PKCE code verifier (required for PKCE providers)
 
         Returns:
             dict: Token response containing access_token, refresh_token, etc.
@@ -304,12 +385,15 @@ class BaseProvider(BaseProviderMixin, ABC):
         return self._validate_and_parse_response(response, error_message)
 
     @abstractmethod
-    async def aexchange_code_for_access_token(self, code: str) -> dict[str, Any]:
+    async def aexchange_code_for_access_token(
+        self, code: str, code_verifier: Optional[str] = None
+    ) -> dict[str, Any]:
         """
         Exchange authorization code for access token (ASYNC).
 
         Args:
             code: Authorization code from callback
+            code_verifier: Optional PKCE code verifier (required for PKCE providers)
 
         Returns:
             dict: Token response containing access_token, refresh_token, etc.

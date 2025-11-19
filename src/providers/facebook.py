@@ -123,12 +123,15 @@ class FacebookProvider(FacebookProviderMixin, BaseProvider):
     # SYNC METHODS
     # =========================================================================
 
-    def exchange_code_for_access_token(self, code: str) -> dict[str, Any]:
+    def exchange_code_for_access_token(
+        self, code: str, code_verifier: Optional[str] = None
+    ) -> dict[str, Any]:
         """
         Exchange authorization code for access token (SYNC).
 
         Args:
             code: Authorization code from Facebook
+            code_verifier: Not used (Facebook doesn't support PKCE)
 
         Returns:
             dict: Token response with access_token, token_type, expires_in, etc.
@@ -182,12 +185,15 @@ class FacebookProvider(FacebookProviderMixin, BaseProvider):
 
         return {"success": True, **result}
 
-    async def aexchange_code_for_access_token(self, code: str) -> dict[str, Any]:
+    async def aexchange_code_for_access_token(
+        self, code: str, code_verifier: Optional[str] = None
+    ) -> dict[str, Any]:
         """
         Exchange authorization code for access token (ASYNC).
 
         Args:
             code: Authorization code from Facebook
+            code_verifier: Not used (Facebook doesn't support PKCE)
 
         Returns:
             dict: Token response with access_token, token_type, expires_in, etc.

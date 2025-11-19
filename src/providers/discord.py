@@ -163,12 +163,15 @@ class DiscordProvider(DiscordProviderMixin, BaseProvider):
         """Get Discord's default scopes."""
         return ["identify", "email"]
 
-    def exchange_code_for_access_token(self, code: str) -> dict[str, Any]:
+    def exchange_code_for_access_token(
+        self, code: str, code_verifier: Optional[str] = None
+    ) -> dict[str, Any]:
         """
         Exchange authorization code for access token (SYNC).
 
         Args:
             code: Authorization code from Discord
+            code_verifier: Not used (Discord doesn't support PKCE)
 
         Returns:
             dict: Token response with access_token, refresh_token, etc.
@@ -248,12 +251,15 @@ class DiscordProvider(DiscordProviderMixin, BaseProvider):
         # Discord returns empty response on success
         return {"success": True, **result}
 
-    async def aexchange_code_for_access_token(self, code: str) -> dict[str, Any]:
+    async def aexchange_code_for_access_token(
+        self, code: str, code_verifier: Optional[str] = None
+    ) -> dict[str, Any]:
         """
         Exchange authorization code for access token (ASYNC).
 
         Args:
             code: Authorization code from Discord
+            code_verifier: Not used (Discord doesn't support PKCE)
 
         Returns:
             dict: Token response with access_token, refresh_token, etc.

@@ -170,12 +170,15 @@ class MicrosoftProvider(MicrosoftProviderMixin, BaseProvider):
     # SYNC METHODS
     # =========================================================================
 
-    def exchange_code_for_access_token(self, code: str) -> dict[str, Any]:
+    def exchange_code_for_access_token(
+        self, code: str, code_verifier: Optional[str] = None
+    ) -> dict[str, Any]:
         """
         Exchange authorization code for access token (SYNC).
 
         Args:
             code: Authorization code from Microsoft
+            code_verifier: Not used (Microsoft doesn't require PKCE for web apps)
 
         Returns:
             dict: Token response with access_token, refresh_token, etc.
@@ -227,12 +230,15 @@ class MicrosoftProvider(MicrosoftProviderMixin, BaseProvider):
             error_message="Failed to refresh token",
         )
 
-    async def aexchange_code_for_access_token(self, code: str) -> dict[str, Any]:
+    async def aexchange_code_for_access_token(
+        self, code: str, code_verifier: Optional[str] = None
+    ) -> dict[str, Any]:
         """
         Exchange authorization code for access token (ASYNC).
 
         Args:
             code: Authorization code from Microsoft
+            code_verifier: Not used (Microsoft doesn't require PKCE for web apps)
 
         Returns:
             dict: Token response with access_token, refresh_token, etc.

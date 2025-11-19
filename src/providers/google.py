@@ -137,12 +137,15 @@ class GoogleProvider(GoogleProviderMixin, BaseProvider):
     # SYNC METHODS
     # =========================================================================
 
-    def exchange_code_for_access_token(self, code: str) -> dict[str, Any]:
+    def exchange_code_for_access_token(
+        self, code: str, code_verifier: Optional[str] = None
+    ) -> dict[str, Any]:
         """
         Exchange authorization code for access token (SYNC).
 
         Args:
             code: Authorization code from Google
+            code_verifier: Not used (Google doesn't require PKCE for web apps)
 
         Returns:
             dict: Token response with access_token, refresh_token, etc.
@@ -215,12 +218,15 @@ class GoogleProvider(GoogleProviderMixin, BaseProvider):
 
         return {"success": True, **result}
 
-    async def aexchange_code_for_access_token(self, code: str) -> dict[str, Any]:
+    async def aexchange_code_for_access_token(
+        self, code: str, code_verifier: Optional[str] = None
+    ) -> dict[str, Any]:
         """
         Exchange authorization code for access token (ASYNC).
 
         Args:
             code: Authorization code from Google
+            code_verifier: Not used (Google doesn't require PKCE for web apps)
 
         Returns:
             dict: Token response with access_token, refresh_token, etc.
