@@ -5,6 +5,7 @@ from .google import GoogleProvider
 from .microsoft import MicrosoftProvider
 from .linkedin import LinkedInProvider
 from .discord import DiscordProvider
+from .twitter import TwitterProvider
 
 __all__ = [
     "BaseProvider",
@@ -14,4 +15,5 @@ __all__ = [
     "MicrosoftProvider",
     "LinkedInProvider",
     "DiscordProvider",
+    "TwitterProvider",
 ]
