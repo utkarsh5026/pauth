@@ -4,6 +4,14 @@ from typing import Optional
 
 
 class FacebookProvider(BaseProvider):
+    """
+    Facebook OAuth 2.0 provider implementation.
+    """
+
+    SUPPORTS_REFRESH = False
+    SUPPORTS_REVOCATION = True
+    SUPPORTS_PKCE = False
+
     @dataclass
     class AccessTokenResponse:
         """

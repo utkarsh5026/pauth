@@ -6,6 +6,10 @@ class GoogleProvider(BaseProvider):
     Google OAuth 2.0 provider implementation.
     """
 
+    SUPPORTS_REFRESH = True
+    SUPPORTS_REVOCATION = True
+    SUPPORTS_PKCE = False
+
     def __init__(
         self, client_id: str, client_secret: str, redirect_uri: str, scopes=None
     ):

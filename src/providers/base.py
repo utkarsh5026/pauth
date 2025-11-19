@@ -20,11 +20,22 @@ class BaseProvider:
         authorization_endpoint (str): The endpoint URL for the authorization request.
         token_endpoint (str): The endpoint URL for the token request.
         revocation_endpoint (str): The endpoint URL for the token revocation.
+        user_info_endpoint (str): The endpoint URL for fetching user information.
+
+    Class Attributes:
+        SUPPORTS_REFRESH (bool): Whether this provider supports token refresh.
+        SUPPORTS_REVOCATION (bool): Whether this provider supports token revocation.
+        SUPPORTS_PKCE (bool): Whether this provider supports PKCE flow.
 
     Methods:
         exchange_code_for_access_token(code: str) -> dict: Abstract method to be implemented by subclasses
             for exchanging an authorization code for an access token.
     """
+
+    # Provider capability flags - subclasses should override these
+    SUPPORTS_REFRESH = False
+    SUPPORTS_REVOCATION = False
+    SUPPORTS_PKCE = False
 
     def __init__(
         self, client_id: str, client_secret: str, redirect_uri: str, scopes=None
@@ -36,6 +47,7 @@ class BaseProvider:
         self.authorization_endpoint = None
         self.token_endpoint = None
         self.revocation_endpoint = None
+        self.user_info_endpoint = None
         self.state = None
 
     def exchange_code_for_access_token(self, code: str, **kwargs) -> dict:
@@ -45,22 +57,6 @@ class BaseProvider:
         Args:
             code (str): The authorization code received from the OAuth provider.
             **kwargs: Additional provider-specific parameters.
-
-        Returns:
-            dict: A dictionary containing the access token and related information.
-
-        Raises:
-            NotImplementedError: This method must be implemented by subclasses.
-        """
-        raise NotImplementedError()
-
-    def exchange_code_for_access_token_pkce(self, code: str, code_verifier: str):
-        """
-        Exchange an authorization code for an access token using PKCE flow.
-
-        Args:
-            code (str): The authorization code received from the OAuth provider.
-            code_verifier (str): The code verifier used in the PKCE flow.
 
         Returns:
             dict: A dictionary containing the access token and related information.
@@ -122,9 +118,12 @@ class BaseProvider:
             dict: New token response
 
         Raises:
-            PAuthError: If token refresh fails
+            NotImplementedError: If the provider does not support token refresh
         """
-        raise NotImplementedError()
+        raise NotImplementedError(
+            f"{self.__class__.__name__} does not support token refresh. "
+            f"Check SUPPORTS_REFRESH before calling this method."
+        )
 
     def revoke_token(self, token: str) -> dict:
         """
@@ -137,9 +136,12 @@ class BaseProvider:
             dict: Revocation response
 
         Raises:
-            PAuthError: If token revocation fails
+            NotImplementedError: If the provider does not support token revocation
         """
-        raise NotImplementedError()
+        raise NotImplementedError(
+            f"{self.__class__.__name__} does not support token revocation. "
+            f"Check SUPPORTS_REVOCATION before calling this method."
+        )
 
     def get_auth_endpoint(self):
         """
@@ -204,7 +206,7 @@ class BaseProvider:
         """
         if response and response.status_code == 200:
             try:
-                return json.loads(response.json())
+                return response.json()
             except ValueError:
                 return {}
         else:
@@ -219,25 +221,3 @@ class BaseProvider:
             str: A URL-safe random string.
         """
         return secrets.token_urlsafe(32)
-
-    @staticmethod
-    def try_reading_response(response: requests.Response | None) -> dict[str, str]:
-        """
-        Attempt to read and parse the JSON response.
-
-        Args:
-            response (requests.Response | None): The HTTP response object.
-
-        Returns:
-            dict[str, str]: The parsed JSON response.
-
-        Raises:
-            PAuthError: If the response status is not 200.
-        """
-        if response and response.status_code == 200:
-            try:
-                return json.loads(response.json())
-            except ValueError:
-                return {}
-        else:
-            raise PAuthError("Response from the server was not successful")

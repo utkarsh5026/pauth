@@ -8,6 +8,10 @@ class GithubProvider(BaseProvider):
     Note: GitHub does not support token refresh for OAuth apps.
     """
 
+    SUPPORTS_REFRESH = False
+    SUPPORTS_REVOCATION = True
+    SUPPORTS_PKCE = False
+
     def __init__(
         self, client_id: str, client_secret: str, redirect_uri: str, scopes=None
     ):

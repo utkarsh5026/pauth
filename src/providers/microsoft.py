@@ -6,6 +6,10 @@ class MicrosoftProvider(BaseProvider):
     Microsoft OAuth 2.0 provider implementation.
     """
 
+    SUPPORTS_REFRESH = True
+    SUPPORTS_REVOCATION = False
+    SUPPORTS_PKCE = False
+
     def __init__(
         self,
         client_id: str,

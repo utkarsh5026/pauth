@@ -7,6 +7,13 @@ from .base import BaseProvider
 
 
 class TwitterProvider(BaseProvider):
+    """
+    Twitter OAuth 2.0 provider implementation with PKCE support.
+    """
+
+    SUPPORTS_REFRESH = False
+    SUPPORTS_REVOCATION = True
+    SUPPORTS_PKCE = True
 
     def __init__(self, client_id: str, client_secret: str, redirect_uri: str, scopes: list[str] = None):
         """
@@ -79,7 +86,7 @@ class TwitterProvider(BaseProvider):
         }
 
         response = make_request('POST', self.token_endpoint, headers=headers, data=data)
-        return self.try_reading_response(response)
+        return self.validate_response_or_raise(response, "Failed to exchange code for access token")
 
     def revoke_token(self, token: str) -> dict:
         """
@@ -98,10 +105,7 @@ class TwitterProvider(BaseProvider):
         data = {'token': token, 'token_type_hint': 'access_token'}
 
         response = make_request('POST', self.revocation_endpoint, headers=headers, data=data)
-        try:
-            return self.try_reading_response(response)
-        except OAuthError as e:
-            raise OAuthError(f"Unable to revoke token, {e}")
+        return self.validate_response_or_raise(response, "Unable to revoke token")
 
     def _get_authorization_header(self) -> dict[str, str]:
         """
