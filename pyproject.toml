@@ -37,6 +37,7 @@ qrcode = "^7.4.2"
 # Optional dependencies
 Flask = {version = "^3.0.0", optional = true}
 Django = {version = "^5.0.0", optional = true}
+httpx = "^0.28.1"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.0.0"
@@ -93,6 +94,7 @@ python_files = ["test_*.py", "*_test.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
 addopts = "-v --cov=src --cov-report=term-missing --cov-report=html"
+markers = ["asyncio: mark test as an asyncio test"]
 
 [tool.mypy]
 python_version = "3.12"
