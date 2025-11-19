@@ -1,0 +1,113 @@
+site_name: PAuth Documentation
+site_description: Making OAuth 2.0 Authentication Simple
+site_author: Utkarsh Priyadarshi
+site_url: https://utkarsh5026.github.io/pauth/
+repo_name: utkarsh5026/pauth
+repo_url: https://github.com/utkarsh5026/pauth
+edit_uri: edit/main/docs/
+
+theme:
+  name: material
+  palette:
+    # Light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    # Dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.top
+    - navigation.tracking
+    - search.suggest
+    - search.highlight
+    - content.tabs.link
+    - content.code.annotation
+    - content.code.copy
+  language: en
+  icon:
+    repo: fontawesome/brands/github
+
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          options:
+            docstring_style: google
+            show_source: true
+            show_root_heading: true
+            show_category_heading: true
+            members_order: source
+
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - admonition
+  - pymdownx.details
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - attr_list
+  - md_in_html
+  - toc:
+      permalink: true
+
+nav:
+  - Home: index.md
+  - Getting Started:
+      - Installation: getting-started/installation.md
+      - Quick Start: getting-started/quick-start.md
+      - Configuration: getting-started/configuration.md
+  - Providers:
+      - Overview: providers/overview.md
+      - Google: providers/google.md
+      - GitHub: providers/github.md
+      - Facebook: providers/facebook.md
+      - Twitter: providers/twitter.md
+      - Microsoft: providers/microsoft.md
+      - LinkedIn: providers/linkedin.md
+      - Discord: providers/discord.md
+  - Integrations:
+      - Flask: integrations/flask.md
+      - Django: integrations/django.md
+  - Advanced:
+      - PKCE Support: advanced/pkce.md
+      - Token Storage: advanced/token-storage.md
+      - Error Handling: advanced/error-handling.md
+      - Security Best Practices: advanced/security.md
+  - API Reference:
+      - Client: api/client.md
+      - Providers: api/providers.md
+      - Models: api/models.md
+      - Storage: api/storage.md
+      - Exceptions: api/exceptions.md
+  - Contributing: contributing.md
+  - Changelog: changelog.md
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/utkarsh5026/pauth
+    - icon: fontawesome/solid/envelope
+      link: mailto:utkarshpriyadarshi5026@gmail.com
+  version:
+    provider: mike
+
+copyright: Copyright &copy; 2024 Utkarsh Priyadarshi
