@@ -5,7 +5,7 @@ In-memory token storage implementation.
 import copy
 import threading
 from typing import Optional, Dict
-from models import TokenResponse
+from src.models.token import TokenResponse
 from src.storage.base import BaseTokenStorage
 
 

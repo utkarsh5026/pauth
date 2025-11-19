@@ -50,7 +50,7 @@ class TokenResponse:
         """
         if self.expires_at is None:
             return False
-        return datetime.utcnow() >= self.expires_at
+        return datetime.now(timezone.utc) >= self.expires_at
 
     @property
     def scopes(self) -> list[str]:

@@ -4,7 +4,7 @@ Base token storage interface.
 
 from abc import ABC, abstractmethod
 from typing import Optional
-from models import TokenResponse
+from src.models.token import TokenResponse
 
 
 class BaseTokenStorage(ABC):
