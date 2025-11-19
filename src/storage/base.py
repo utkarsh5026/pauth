@@ -16,13 +16,13 @@ class BaseTokenStorage(ABC):
     """
 
     @abstractmethod
-    def save_token(self, user_id: str, tokens: TokenResponse) -> None:
+    def save_token(self, user_id: str, token: TokenResponse) -> None:
         """
         Save tokens for a user.
 
         Args:
             user_id (str): Unique identifier for the user
-            tokens (TokenResponse): Token response to save
+            token (TokenResponse): Token response to save
 
         Raises:
             TokenStorageError: If saving fails
@@ -62,14 +62,13 @@ class BaseTokenStorage(ABC):
         pass
 
     @abstractmethod
-    def update_token(self, user_id: str, tokens: TokenResponse) -> None:
+    def update_token(self, user_id: str, token: TokenResponse) -> None:
         """
-        Update tokens for a user.
+        Update token for a user.
 
         Args:
             user_id (str): Unique identifier for the user
-            tokens (TokenResponse): New token response
-
+            token (TokenResponse): New token response
         Raises:
             TokenStorageError: If update fails
         """
