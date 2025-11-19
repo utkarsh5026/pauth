@@ -2,10 +2,10 @@ import json
 import secrets
 import requests
 from urllib.parse import urlencode
-from typing import Optional, Literal, Any
+from typing import Optional, Literal, Any, Tuple
 from collections.abc import Mapping
-from exceptions import PAuthError
-from utils import make_request
+from src.exceptions import PAuthError
+from src.utils import make_request, generate_pkce_pair
 
 
 class BaseProvider:
@@ -49,6 +49,9 @@ class BaseProvider:
         self.revocation_endpoint = None
         self.user_info_endpoint = None
         self.state = None
+        # PKCE attributes (only used if SUPPORTS_PKCE is True)
+        self.code_verifier = None
+        self.code_challenge = None
 
     def exchange_code_for_access_token(self, code: str, **kwargs) -> dict:
         """
@@ -154,7 +157,8 @@ class BaseProvider:
             ValueError: If the authorization endpoint is not set.
         """
         if not self.authorization_endpoint:
-            raise ValueError("Authorization endpoint is not set for this provider")
+            raise ValueError(
+                "Authorization endpoint is not set for this provider")
         return self.authorization_endpoint
 
     def oauth(
@@ -211,6 +215,34 @@ class BaseProvider:
                 return {}
         else:
             raise PAuthError(message=err_msg)
+
+    def generate_pkce_parameters(self, length: int = 64, method: str = "S256") -> Tuple[str, str]:
+        """
+        Generate and store PKCE code verifier and code challenge.
+
+        This method is useful for providers that support PKCE. It generates
+        both the code verifier and challenge, stores them in the instance,
+        and returns them for use in the authorization URL.
+
+        Args:
+            length (int): Length of the code verifier (43-128). Defaults to 64.
+            method (str): Challenge method, either "S256" or "plain". Defaults to "S256".
+
+        Returns:
+            Tuple[str, str]: A tuple of (code_verifier, code_challenge).
+
+        Example:
+            ```python
+            # In a provider's prepare_auth_url method
+            if self.SUPPORTS_PKCE:
+                verifier, challenge = self.generate_pkce_parameters()
+                additional_params['code_challenge'] = challenge
+                additional_params['code_challenge_method'] = 'S256'
+            ```
+        """
+        self.code_verifier, self.code_challenge = generate_pkce_pair(
+            length=length, method=method)
+        return self.code_verifier, self.code_challenge
 
     @staticmethod
     def create_state() -> str:

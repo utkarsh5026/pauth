@@ -1,14 +1,16 @@
 import base64
-import hashlib
-import secrets
 
-from src.utils import make_request, OAuthError
+from src.utils import make_request
 from .base import BaseProvider
 
 
 class TwitterProvider(BaseProvider):
     """
     Twitter OAuth 2.0 provider implementation with PKCE support.
+
+    Twitter requires PKCE (Proof Key for Code Exchange) for all OAuth 2.0 flows.
+    The code verifier and challenge are automatically generated when calling
+    prepare_auth_url().
     """
 
     SUPPORTS_REFRESH = False
@@ -33,9 +35,6 @@ class TwitterProvider(BaseProvider):
         self.token_endpoint = "https://api.twitter.com/2/oauth2/token"
         self.revocation_endpoint = "https://api.twitter.com/2/oauth2/revoke"
         self.code_challenge_method = 'S256'
-        self.state = None
-        self.code_verifier = None
-        self.code_challenge = None
 
     def prepare_auth_url(self, additional_params: dict[str, str] = None) -> str:
         """
@@ -50,8 +49,8 @@ class TwitterProvider(BaseProvider):
         Returns:
             str: The authorization URL for the OAuth provider
         """
-        self.code_verifier = secrets.token_urlsafe(64)
-        self.code_challenge = self._generate_code_challenge(self.code_verifier)
+        # Use the base class method to generate PKCE parameters
+        self.generate_pkce_parameters(length=64, method='S256')
 
         additional_params = additional_params if additional_params else {}
         additional_params.update({
@@ -124,20 +123,3 @@ class TwitterProvider(BaseProvider):
             'Authorization': f'Basic {auth_header}'
         }
         return headers
-
-    @staticmethod
-    def _generate_code_challenge(code_verifier: str) -> str:
-        """
-        Generates a code challenge based on the provided code verifier.
-
-        Args:
-            code_verifier (str): The code verifier for PKCE.
-
-        Returns:
-            str: The code challenge.
-        """
-        verifier_bytes = code_verifier.encode()
-        sha256_hash = hashlib.sha256(verifier_bytes).digest()
-        base64_encoded = base64.urlsafe_b64encode(sha256_hash).decode('utf-8')
-        code_challenge = base64_encoded.rstrip('=')
-        return code_challenge
