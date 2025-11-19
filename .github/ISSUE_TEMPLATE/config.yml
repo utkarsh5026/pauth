@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Question or Discussion
+    url: https://github.com/utkarsh5026/pauth/discussions
+    about: Ask questions or start discussions about PAuth
+  - name: Security Vulnerability
+    url: https://github.com/utkarsh5026/pauth/security/advisories/new
+    about: Report a security vulnerability (private)
+  - name: Documentation
+    url: https://github.com/utkarsh5026/pauth#readme
+    about: Read the documentation

@@ -1,0 +1,136 @@
+name: Bug Report
+description: File a bug report to help us improve
+title: "[Bug]: "
+labels: ["bug", "triage"]
+assignees:
+  - utkarsh5026
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to fill out this bug report! Please provide as much detail as possible.
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Bug Description
+      description: A clear and concise description of what the bug is.
+      placeholder: Tell us what you see!
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to Reproduce
+      description: Steps to reproduce the behavior
+      placeholder: |
+        1. Initialize OAuth2Client with...
+        2. Call method...
+        3. See error...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behavior
+      description: A clear and concise description of what you expected to happen.
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual Behavior
+      description: A clear and concise description of what actually happened.
+    validations:
+      required: true
+
+  - type: textarea
+    id: code-sample
+    attributes:
+      label: Code Sample
+      description: Please provide a minimal code sample that reproduces the issue
+      render: python
+      placeholder: |
+        from pauth import OAuth2Client, Providers
+
+        client = OAuth2Client(
+            provider=Providers.GOOGLE,
+            client_id="...",
+            client_secret="..."
+        )
+        # ... rest of code
+
+  - type: dropdown
+    id: provider
+    attributes:
+      label: OAuth Provider
+      description: Which OAuth provider are you using?
+      options:
+        - Google
+        - GitHub
+        - Facebook
+        - Twitter
+        - Discord
+        - LinkedIn
+        - Microsoft
+        - Other
+        - Not applicable
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: PAuth Version
+      description: What version of PAuth are you using?
+      placeholder: "e.g., 0.2.0"
+    validations:
+      required: true
+
+  - type: input
+    id: python-version
+    attributes:
+      label: Python Version
+      description: What version of Python are you using?
+      placeholder: "e.g., 3.12.0"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating System
+      description: What operating system are you using?
+      options:
+        - Linux
+        - macOS
+        - Windows
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Error Logs
+      description: Please copy and paste any relevant log output
+      render: shell
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional Context
+      description: Add any other context about the problem here (screenshots, related issues, etc.)
+
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Code of Conduct
+      description: By submitting this issue, you agree to follow our Code of Conduct
+      options:
+        - label: I agree to follow this project's Code of Conduct
+          required: true
