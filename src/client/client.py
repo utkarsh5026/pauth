@@ -6,7 +6,7 @@ from typing import Optional, Union
 from src.models import Providers, TokenResponse, UserInfo
 from src.providers import BaseProvider
 from src.storage import BaseTokenStorage, MemoryTokenStorage
-from exceptions import ConfigurationError, TokenError, AuthorizationError
+from src.exceptions import ConfigurationError, TokenError, AuthorizationError
 
 
 class OAuth2Client:
