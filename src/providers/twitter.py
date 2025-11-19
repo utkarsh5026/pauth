@@ -126,18 +126,24 @@ class TwitterProvider(TwitterProviderMixin, BaseProvider):
         return ["tweet.read", "users.read", "follows.read", "follows.write"]
 
     def exchange_code_for_access_token(
-        self, code: str, code_verifier: str
+        self, code: str, code_verifier: Optional[str] = None
     ) -> dict[str, Any]:
         """
         Exchange authorization code for access token with PKCE (SYNC).
 
         Args:
             code: Authorization code from Twitter
-            code_verifier: PKCE code verifier used to generate code_challenge
+            code_verifier: PKCE code verifier used to generate code_challenge (required for Twitter)
 
         Returns:
             dict: Token response with access_token, token_type, etc.
+
+        Raises:
+            ValueError: If code_verifier is not provided (Twitter requires PKCE)
         """
+        if code_verifier is None:
+            raise ValueError("code_verifier is required for Twitter OAuth (PKCE)")
+
         headers = self._build_basic_auth_header()
         data = self._build_token_exchange_payload(code, code_verifier)
 
@@ -173,18 +179,24 @@ class TwitterProvider(TwitterProviderMixin, BaseProvider):
         return {"success": True, **result}
 
     async def aexchange_code_for_access_token(
-        self, code: str, code_verifier: str
+        self, code: str, code_verifier: Optional[str] = None
     ) -> dict[str, Any]:
         """
         Exchange authorization code for access token with PKCE (ASYNC).
 
         Args:
             code: Authorization code from Twitter
-            code_verifier: PKCE code verifier used to generate code_challenge
+            code_verifier: PKCE code verifier used to generate code_challenge (required for Twitter)
 
         Returns:
             dict: Token response with access_token, token_type, etc.
+
+        Raises:
+            ValueError: If code_verifier is not provided (Twitter requires PKCE)
         """
+        if code_verifier is None:
+            raise ValueError("code_verifier is required for Twitter OAuth (PKCE)")
+
         headers = self._build_basic_auth_header()
         data = self._build_token_exchange_payload(code, code_verifier)
 
