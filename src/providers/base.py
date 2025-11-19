@@ -96,6 +96,51 @@ class BaseProvider:
 
         return f"{self.get_auth_endpoint()}?{urlencode(base_params)}"
 
+    def get_user_info(self, access_token: str) -> dict:
+        """
+        Fetch user information.
+
+        Args:
+            access_token: Valid access token
+
+        Returns:
+            dict: User information
+
+        Raises:
+            OAuthError: If fetching user info fails
+        """
+        raise NotImplementedError()
+
+    def refresh_token(self, refresh_token: str) -> dict:
+        """
+        Refresh an access token.
+
+        Args:
+            refresh_token: Refresh token
+
+        Returns:
+            dict: New token response
+
+        Raises:
+            PAuthError: If token refresh fails
+        """
+        raise NotImplementedError()
+
+    def revoke_token(self, token: str) -> dict:
+        """
+        Revoke an access or refresh token.
+
+        Args:
+            token: Token to revoke
+
+        Returns:
+            dict: Revocation response
+
+        Raises:
+            PAuthError: If token revocation fails
+        """
+        raise NotImplementedError()
+
     def get_auth_endpoint(self):
         """
         Get the authorization endpoint URL.
