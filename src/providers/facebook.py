@@ -1,31 +1,84 @@
-from dataclasses import dataclass
+"""
+Facebook OAuth 2.0 provider with unified sync/async support.
+"""
+
+from typing import Optional, Any
 from .base import BaseProvider
-from typing import Optional
+from src.utils.http import HTTPClient, AsyncHTTPClient
 
 
-class FacebookProvider(BaseProvider):
+class FacebookProviderMixin:
     """
-    Facebook OAuth 2.0 provider implementation.
+    Mixin class containing Facebook-specific payload preparation methods.
+
+    This class contains pure data preparation logic that's shared between
+    sync and async Facebook provider implementations.
+
+    Requires the following attributes from implementing class:
+        - client_id: str
+        - client_secret: str
+        - redirect_uri: str
+    """
+
+    client_id: str
+    client_secret: str
+    redirect_uri: str
+
+    def _build_token_exchange_params(self, code: str) -> dict[str, str]:
+        """
+        Build query parameters for exchanging authorization code for access token.
+
+        Args:
+            code: Authorization code from OAuth callback
+
+        Returns:
+            dict: Query parameters for token exchange request
+        """
+        return {
+            "client_id": self.client_id,
+            "client_secret": self.client_secret,
+            "code": code,
+            "redirect_uri": self.redirect_uri,
+        }
+
+    def _build_user_info_params(self, access_token: str) -> dict[str, str]:
+        """
+        Build query parameters for fetching user info.
+
+        Args:
+            access_token: OAuth access token
+
+        Returns:
+            dict: Query parameters with access token and fields
+        """
+        return {
+            "access_token": access_token,
+            "fields": "id,name,email,picture,first_name,last_name",
+        }
+
+    def _build_revoke_payload(self, token: str) -> dict[str, str]:
+        """
+        Build payload for token revocation.
+
+        Args:
+            token: Token to revoke (access token)
+
+        Returns:
+            dict: Payload for revocation request
+        """
+        return {"access_token": token}
+
+
+class FacebookProvider(FacebookProviderMixin, BaseProvider):
+    """
+    Facebook OAuth 2.0 provider with both sync and async methods
+
+    Note: Facebook does not support token refresh for standard OAuth.
     """
 
     SUPPORTS_REFRESH = False
     SUPPORTS_REVOCATION = True
     SUPPORTS_PKCE = False
-
-    @dataclass
-    class AccessTokenResponse:
-        """
-        A dataclass for structuring the access token response from Facebook.
-
-        Attributes:
-            access_token (str): The access token issued by the authorization server.
-            token_type (str): The type of the token issued.
-            expires_in (int): The lifetime in seconds of the access token.
-        """
-
-        access_token: str
-        token_type: str
-        expires_in: int
 
     def __init__(
         self,
@@ -33,115 +86,157 @@ class FacebookProvider(BaseProvider):
         client_secret: str,
         redirect_uri: str,
         scopes: Optional[list[str]] = None,
+        http_client: Optional[HTTPClient] = None,
+        async_http_client: Optional[AsyncHTTPClient] = None,
     ):
         """
-        Initializes the FacebookProvider with necessary OAuth 2.0 credentials and endpoints.
+        Initialize Facebook OAuth provider.
 
         Args:
-            client_id (str): The client ID issued to the app by the Facebook Developer Console.
-            client_secret (str): The client secret issued to the app by the Facebook Developer Console.
-            redirect_uri (str): The URI to redirect to after the user authorizes the app.
-            scopes (list[str], optional): The scopes of the access request.
+            client_id: Facebook OAuth client ID
+            client_secret: Facebook OAuth client secret
+            redirect_uri: Registered redirect URI
+            scopes: OAuth scopes (defaults to email, public_profile)
+            http_client: Custom sync HTTP client (optional)
+            async_http_client: Custom async HTTP client (optional)
         """
-
         super().__init__(
             client_id=client_id,
             client_secret=client_secret,
             redirect_uri=redirect_uri,
-            scopes=scopes or ["email", "public_profile"],
+            scopes=scopes,
+            http_client=http_client,
+            async_http_client=async_http_client,
         )
+
+        # Set Facebook OAuth endpoints
         self.authorization_endpoint = "https://www.facebook.com/v20.0/dialog/oauth"
         self.token_endpoint = "https://graph.facebook.com/v20.0/oauth/access_token"
         self.revocation_endpoint = "https://graph.facebook.com/me/permissions"
         self.user_info_endpoint = "https://graph.facebook.com/me"
 
-    def exchange_code_for_access_token(self, code: str, **kwargs) -> dict:
+    def _get_default_scopes(self) -> list[str]:
+        """Get Facebook's default scopes."""
+        return ["email", "public_profile"]
+
+    # =========================================================================
+    # SYNC METHODS
+    # =========================================================================
+
+    def exchange_code_for_access_token(self, code: str) -> dict[str, Any]:
         """
-        Exchanges an authorization code for an access token.
+        Exchange authorization code for access token (SYNC).
 
         Args:
-            code (str): The authorization code received from the authorization server.
-            **kwargs: Additional parameters
+            code: Authorization code from Facebook
 
         Returns:
-            dict: The access token information as a dictionary.
-
-        Raises:
-            OAuthError: If the token exchange fails.
+            dict: Token response with access_token, token_type, expires_in, etc.
         """
-        params = {
-            "client_id": self.client_id,
-            "client_secret": self.client_secret,
-            "code": code,
-            "redirect_uri": self.redirect_uri,
-        }
+        params = self._build_token_exchange_params(code)
 
-        return self.oauth(
+        return self._make_request(
             method="GET",
-            url=self.token_endpoint,
+            url=self._ensure(self.token_endpoint),
             params=params,
-            err_msg="Unable to exchange code for access token",
+            error_message="Unable to exchange code for access token",
         )
 
-    def revoke_token(self, token):
+    def get_user_info(self, access_token: str) -> dict[str, Any]:
         """
-        Revokes the given access token.
-
-        Args:
-            token (str): The access token to be revoked.
-
-        Returns:
-            The response from the token revocation endpoint.
-        """
-        return self.oauth(
-            method="DELETE",
-            url=self.revocation_endpoint,
-            data={"access_token": token},
-            err_msg="Failed to revoke token",
-        )
-
-    def get_user_info(self, access_token: str) -> dict:
-        """
-        Fetch user information.
+        Fetch user information from Facebook (SYNC).
 
         Args:
             access_token: Valid access token
 
         Returns:
-            dict: User information
-
-        Raises:
-            OAuthError: If fetching user info fails
+            dict: User information (id, name, email, picture, etc.)
         """
-        params = {
-            "access_token": access_token,
-            "fields": "id,name,email,picture,first_name,last_name",
-        }
+        params = self._build_user_info_params(access_token)
 
-        return self.oauth(
+        return self._make_request(
             method="GET",
-            url=self.user_info_endpoint,
+            url=self._ensure(self.user_info_endpoint),
             params=params,
-            err_msg="Failed to fetch user info",
+            error_message="Failed to fetch user info",
         )
 
-    def parse_access_token_response(self, response: dict) -> AccessTokenResponse:
+    def revoke_token(self, token: str) -> dict[str, Any]:
         """
-        Parses the access token response into an AccessTokenResponse dataclass.
+        Revoke an access token (SYNC).
 
         Args:
-            response (dict): The raw access token response from the token endpoint.
+            token: Token to revoke
 
         Returns:
-            AccessTokenResponse: The parsed access token response.
+            dict: Revocation response
         """
-        keys = ["access_token", "token_type", "expires_in"]
+        data = self._build_revoke_payload(token)
 
-        if not all(key in response for key in keys):
-            raise ValueError("Invalid access token response from Facebook")
-
-        return self.AccessTokenResponse(
-            access_token=response["access_token"],
-            token_type=response["token_type"],
-            expires_in=response["expires_in"],
+        result = self._make_request(
+            method="DELETE",
+            url=self._ensure(self.revocation_endpoint),
+            data=data,
+            error_message="Failed to revoke token",
         )
+
+        return {"success": True, **result}
+
+    async def aexchange_code_for_access_token(self, code: str) -> dict[str, Any]:
+        """
+        Exchange authorization code for access token (ASYNC).
+
+        Args:
+            code: Authorization code from Facebook
+
+        Returns:
+            dict: Token response with access_token, token_type, expires_in, etc.
+        """
+        params = self._build_token_exchange_params(code)
+
+        return await self._amake_request(
+            method="GET",
+            url=self._ensure(self.token_endpoint),
+            params=params,
+            error_message="Unable to exchange code for access token",
+        )
+
+    async def aget_user_info(self, access_token: str) -> dict[str, Any]:
+        """
+        Fetch user information from Facebook (ASYNC).
+
+        Args:
+            access_token: Valid access token
+
+        Returns:
+            dict: User information (id, name, email, picture, etc.)
+        """
+        params = self._build_user_info_params(access_token)
+
+        return await self._amake_request(
+            method="GET",
+            url=self._ensure(self.user_info_endpoint),
+            params=params,
+            error_message="Failed to fetch user info",
+        )
+
+    async def arevoke_token(self, token: str) -> dict[str, Any]:
+        """
+        Revoke an access token (ASYNC).
+
+        Args:
+            token: Token to revoke
+
+        Returns:
+            dict: Revocation response
+        """
+        data = self._build_revoke_payload(token)
+
+        result = await self._amake_request(
+            method="DELETE",
+            url=self._ensure(self.revocation_endpoint),
+            data=data,
+            error_message="Failed to revoke token",
+        )
+
+        return {"success": True, **result}

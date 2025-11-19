@@ -1,103 +1,219 @@
-import json
-import secrets
-import requests
+"""
+Stateless OAuth provider base class with unified sync/async support.
+"""
+
+from abc import ABC, abstractmethod
+from typing import Optional, Any
 from urllib.parse import urlencode
-from typing import Optional, Literal, Any, Tuple
-from collections.abc import Mapping
+from src.utils.http import HTTPClient, AsyncHTTPClient, HTTPResponse, HttpMethod
 from src.exceptions import PAuthError
-from src.utils import make_request, generate_pkce_pair
 
 
-class BaseProvider:
+class BaseProviderMixin:
     """
-    A base class for OAuth providers to inherit from, providing common attributes and methods.
+    Mixin class containing common data preparation methods.
 
+    This class contains pure functions that don't perform I/O operations,
+    only data transformation and validation logic.
+
+    Requires the following attributes from the implementing class:
+        - client_id: str
+        - client_secret: str
+        - redirect_uri: str
+        - scopes: list[str]
+    """
+
+    client_id: str
+    client_secret: str
+    redirect_uri: str
+    scopes: list[str]
+
+    def _build_authorization_params(
+        self,
+        state: str,
+        scopes: Optional[list[str]] = None,
+        additional_params: Optional[dict[str, Any]] = None,
+    ) -> dict[str, Any]:
+        """
+        Build authorization URL parameters.
+
+        Args:
+            state: CSRF protection token
+            scopes: Scopes to request (uses self.scopes if None)
+            additional_params: Additional query parameters
+
+        Returns:
+            dict: URL parameters for authorization request
+        """
+        params = {
+            "client_id": self.client_id,
+            "redirect_uri": self.redirect_uri,
+            "response_type": "code",
+            "scope": " ".join(scopes or self.scopes),
+            "state": state,
+        }
+
+        if additional_params:
+            params.update(additional_params)
+
+        return params
+
+    def _validate_and_parse_response(
+        self, response: HTTPResponse, error_message: str = "Request failed"
+    ) -> dict[str, Any]:
+        """
+        Validate HTTP response and parse JSON.
+
+        Args:
+            response: HTTP response object
+            error_message: Error message prefix for failures
+
+        Returns:
+            dict: Parsed JSON response
+
+        Raises:
+            PAuthError: If response status is not 200 or JSON parsing fails
+        """
+        if response.status_code != 200:
+            raise PAuthError(
+                message=f"{error_message}: HTTP {response.status_code}",
+            )
+
+        try:
+            return response.json()
+        except Exception as e:
+            raise PAuthError(message=f"Failed to parse response: {e}")
+
+
+class BaseProvider(BaseProviderMixin, ABC):
+    """
     Attributes:
-        client_id (str): The client ID for the OAuth application.
-        client_secret (str): The client secret for the OAuth application.
-        redirect_uri (str): The URI to redirect to after authorization.
-        scopes (list, optional): The list of scopes for which the authorization is requested.
-        authorization_endpoint (str): The endpoint URL for the authorization request.
-        token_endpoint (str): The endpoint URL for the token request.
-        revocation_endpoint (str): The endpoint URL for the token revocation.
-        user_info_endpoint (str): The endpoint URL for fetching user information.
+        client_id (str): OAuth client ID
+        client_secret (str): OAuth client secret
+        redirect_uri (str): Registered redirect URI
+        scopes (list[str]): Default scopes for this provider
+        authorization_endpoint (str): Provider's authorization URL
+        token_endpoint (str): Provider's token exchange URL
+        revocation_endpoint (str): Provider's token revocation URL
+        user_info_endpoint (str): Provider's user info URL
+        http_client (HTTPClient): Sync HTTP client
+        async_http_client (AsyncHTTPClient): Async HTTP client
 
     Class Attributes:
-        SUPPORTS_REFRESH (bool): Whether this provider supports token refresh.
-        SUPPORTS_REVOCATION (bool): Whether this provider supports token revocation.
-        SUPPORTS_PKCE (bool): Whether this provider supports PKCE flow.
-
-    Methods:
-        exchange_code_for_access_token(code: str) -> dict: Abstract method to be implemented by subclasses
-            for exchanging an authorization code for an access token.
+        SUPPORTS_REFRESH (bool): Whether provider supports token refresh
+        SUPPORTS_REVOCATION (bool): Whether provider supports token revocation
+        SUPPORTS_PKCE (bool): Whether provider requires/supports PKCE
     """
 
-    # Provider capability flags - subclasses should override these
+    # Provider capability flags
     SUPPORTS_REFRESH = False
     SUPPORTS_REVOCATION = False
     SUPPORTS_PKCE = False
 
     def __init__(
-        self, client_id: str, client_secret: str, redirect_uri: str, scopes=None
+        self,
+        client_id: str,
+        client_secret: str,
+        redirect_uri: str,
+        scopes: Optional[list[str]] = None,
+        http_client: Optional[HTTPClient] = None,
+        async_http_client: Optional[AsyncHTTPClient] = None,
     ):
+        """
+        Initialize the OAuth provider.
+
+        Args:
+            client_id: OAuth client ID
+            client_secret: OAuth client secret
+            redirect_uri: Registered redirect URI
+            scopes: Default scopes (provider-specific defaults if None)
+            http_client: Custom sync HTTP client (uses RequestsAdapter if None)
+            async_http_client: Custom async HTTP client (uses HttpxAdapter if None)
+        """
         self.client_id = client_id
         self.client_secret = client_secret
         self.redirect_uri = redirect_uri
-        self.scopes = scopes
-        self.authorization_endpoint = None
-        self.token_endpoint = None
-        self.revocation_endpoint = None
-        self.user_info_endpoint = None
-        self.state = None
-        # PKCE attributes (only used if SUPPORTS_PKCE is True)
-        self.code_verifier = None
-        self.code_challenge = None
+        self.scopes = scopes or self._get_default_scopes()
 
-    def exchange_code_for_access_token(self, code: str, **kwargs) -> dict:
+        if http_client is None:
+            from src.utils.http import RequestsAdapter
+
+            http_client = RequestsAdapter()
+        self.http_client = http_client
+
+        if async_http_client is None:
+            from src.utils.http import HttpxAdapter
+
+            async_http_client = HttpxAdapter()
+        self.async_http_client = async_http_client
+
+        self.authorization_endpoint: Optional[str] = None
+        self.token_endpoint: Optional[str] = None
+        self.revocation_endpoint: Optional[str] = None
+        self.user_info_endpoint: Optional[str] = None
+
+    def _get_default_scopes(self) -> list[str]:
         """
-        Exchange an authorization code for an access token.
+        Get provider-specific default scopes.
+        Subclasses should override this.
+        """
+        return []
+
+    def _ensure(self, s: Optional[str]) -> str:
+        """
+        Ensure that a required endpoint is set.
+        """
+        if s is None:
+            raise ValueError("Required endpoint is not set")
+        return s
+
+    def build_authorization_url(
+        self,
+        state: str,
+        scopes: Optional[list[str]] = None,
+        additional_params: Optional[dict[str, Any]] = None,
+    ) -> str:
+        """
+        Build the authorization URL (stateless).
 
         Args:
-            code (str): The authorization code received from the OAuth provider.
-            **kwargs: Additional provider-specific parameters.
+            state: CSRF protection token (caller provides)
+            scopes: Scopes to request (uses default if None)
+            additional_params: Additional query parameters
 
         Returns:
-            dict: A dictionary containing the access token and related information.
+            str: Complete authorization URL
+        """
+        if not self.authorization_endpoint:
+            raise ValueError(
+                f"Authorization endpoint not set for {self.__class__.__name__}"
+            )
+
+        params = self._build_authorization_params(
+            state=state, scopes=scopes, additional_params=additional_params
+        )
+
+        return f"{self.authorization_endpoint}?{urlencode(params)}"
+
+    @abstractmethod
+    def exchange_code_for_access_token(self, code: str) -> dict[str, Any]:
+        """
+        Exchange authorization code for access token (SYNC).
+
+        Args:
+            code: Authorization code from callback
+
+        Returns:
+            dict: Token response containing access_token, refresh_token, etc.
 
         Raises:
-            NotImplementedError: This method must be implemented by subclasses.
+            PAuthError: If exchange fails
         """
         raise NotImplementedError()
 
-    def prepare_auth_url(self, additional_params: Optional[dict[str, str]] = None):
+    def get_user_info(self, access_token: str) -> dict[str, Any]:
         """
-        Prepare the authorization URL for the OAuth flow.
-
-        Args:
-            additional_params (Optional[dict[str, str]]): Additional query parameters to include in the URL.
-
-        Returns:
-            str: The complete authorization URL with all required parameters.
-        """
-        scopes = self.scopes if self.scopes else []
-        additional_params = additional_params if additional_params else {}
-        self.state = self.create_state()
-        base_params = {
-            "client_id": self.client_id,
-            "redirect_uri": self.redirect_uri,
-            "response_type": "code",
-            "scope": " ".join(scopes),
-            "state": self.state,
-        }
-
-        for key, value in additional_params.items():
-            base_params[key] = value
-
-        return f"{self.get_auth_endpoint()}?{urlencode(base_params)}"
-
-    def get_user_info(self, access_token: str) -> dict:
-        """
-        Fetch user information.
+        Fetch user information using access token (SYNC).
 
         Args:
             access_token: Valid access token
@@ -106,13 +222,15 @@ class BaseProvider:
             dict: User information
 
         Raises:
-            OAuthError: If fetching user info fails
+            PAuthError: If request fails
         """
-        raise NotImplementedError()
+        raise NotImplementedError(
+            f"{self.__class__.__name__} does not implement get_user_info()"
+        )
 
-    def refresh_token(self, refresh_token: str) -> dict:
+    def refresh_token(self, refresh_token: str) -> dict[str, Any]:
         """
-        Refresh an access token.
+        Refresh an access token (SYNC).
 
         Args:
             refresh_token: Refresh token
@@ -121,16 +239,16 @@ class BaseProvider:
             dict: New token response
 
         Raises:
-            NotImplementedError: If the provider does not support token refresh
+            NotImplementedError: If provider doesn't support refresh
         """
         raise NotImplementedError(
             f"{self.__class__.__name__} does not support token refresh. "
-            f"Check SUPPORTS_REFRESH before calling this method."
+            f"Check SUPPORTS_REFRESH before calling."
         )
 
-    def revoke_token(self, token: str) -> dict:
+    def revoke_token(self, token: str) -> dict[str, Any]:
         """
-        Revoke an access or refresh token.
+        Revoke an access or refresh token (SYNC).
 
         Args:
             token: Token to revoke
@@ -139,117 +257,154 @@ class BaseProvider:
             dict: Revocation response
 
         Raises:
-            NotImplementedError: If the provider does not support token revocation
+            NotImplementedError: If provider doesn't support revocation
         """
         raise NotImplementedError(
             f"{self.__class__.__name__} does not support token revocation. "
-            f"Check SUPPORTS_REVOCATION before calling this method."
+            f"Check SUPPORTS_REVOCATION before calling."
         )
 
-    def get_auth_endpoint(self):
-        """
-        Get the authorization endpoint URL.
-
-        Returns:
-            str: The authorization endpoint URL.
-
-        Raises:
-            ValueError: If the authorization endpoint is not set.
-        """
-        if not self.authorization_endpoint:
-            raise ValueError(
-                "Authorization endpoint is not set for this provider")
-        return self.authorization_endpoint
-
-    def oauth(
+    def _make_request(
         self,
-        method: Literal["GET", "POST", "PUT", "DELETE", "PATCH"],
+        method: HttpMethod,
         url: str,
-        params: Any = None,
-        headers: Optional[Mapping[str, str | bytes]] = None,
-        data: Any = None,
-        err_msg: str = "OAuth request failed",
-    ):
+        data: Optional[Any] = None,
+        headers: Optional[dict[str, str]] = None,
+        params: Optional[dict[str, str]] = None,
+        json: Optional[Any] = None,
+        error_message: str = "Request failed",
+    ) -> dict[str, Any]:
         """
-        Make an OAuth request to the specified URL.
+        Make a sync HTTP request using the configured client.
 
         Args:
-            method (Literal["GET", "POST", "PUT", "DELETE", "PATCH"]): The HTTP method to use.
-            url (str): The URL to send the request to.
-            params (Any, optional): Query parameters for the request.
-            headers (Optional[Mapping[str, str | bytes]], optional): HTTP headers for the request.
-            data (Any, optional): Request body data.
-            err_msg (str, optional): Custom error message if the request fails. Defaults to "OAuth request failed".
+            method: HTTP method
+            url: Request URL
+            data: Form data
+            headers: HTTP headers
+            params: Query parameters
+            json: JSON body
+            error_message: Error message if request fails
 
         Returns:
-            dict: The parsed JSON response from the server.
+            dict: Parsed JSON response
 
         Raises:
-            PAuthError: If the request fails or returns a non-200 status code.
+            PAuthError: If request fails
         """
-        response = make_request(
-            method=method, url=url, params=params, headers=headers, data=data
+        response: HTTPResponse = self.http_client.request(
+            method=method,
+            url=url,
+            data=data,
+            headers=headers,
+            params=params,
+            json=json,
         )
-        return self.validate_response_or_raise(response, err_msg)
 
-    def validate_response_or_raise(
-        self, response: requests.Response | None, err_msg: str
-    ) -> dict[str, str]:
+        return self._validate_and_parse_response(response, error_message)
+
+    @abstractmethod
+    async def aexchange_code_for_access_token(self, code: str) -> dict[str, Any]:
         """
-        Validate the HTTP response and parse JSON or raise an error.
+        Exchange authorization code for access token (ASYNC).
 
         Args:
-            response (requests.Response | None): The HTTP response object.
-            err_msg (str): The error message to use if validation fails.
+            code: Authorization code from callback
 
         Returns:
-            dict[str, str]: The parsed JSON response.
+            dict: Token response containing access_token, refresh_token, etc.
 
         Raises:
-            PAuthError: If the response is invalid or status code is not 200.
+            PAuthError: If exchange fails
         """
-        if response and response.status_code == 200:
-            try:
-                return response.json()
-            except ValueError:
-                return {}
-        else:
-            raise PAuthError(message=err_msg)
+        raise NotImplementedError()
 
-    def generate_pkce_parameters(self, length: int = 64, method: str = "S256") -> Tuple[str, str]:
+    async def aget_user_info(self, access_token: str) -> dict[str, Any]:
         """
-        Generate and store PKCE code verifier and code challenge.
-
-        This method is useful for providers that support PKCE. It generates
-        both the code verifier and challenge, stores them in the instance,
-        and returns them for use in the authorization URL.
+        Fetch user information using access token (ASYNC).
 
         Args:
-            length (int): Length of the code verifier (43-128). Defaults to 64.
-            method (str): Challenge method, either "S256" or "plain". Defaults to "S256".
+            access_token: Valid access token
 
         Returns:
-            Tuple[str, str]: A tuple of (code_verifier, code_challenge).
+            dict: User information
 
-        Example:
-            ```python
-            # In a provider's prepare_auth_url method
-            if self.SUPPORTS_PKCE:
-                verifier, challenge = self.generate_pkce_parameters()
-                additional_params['code_challenge'] = challenge
-                additional_params['code_challenge_method'] = 'S256'
-            ```
+        Raises:
+            PAuthError: If request fails
         """
-        self.code_verifier, self.code_challenge = generate_pkce_pair(
-            length=length, method=method)
-        return self.code_verifier, self.code_challenge
+        raise NotImplementedError(
+            f"{self.__class__.__name__} does not implement aget_user_info()"
+        )
 
-    @staticmethod
-    def create_state() -> str:
+    async def arefresh_token(self, refresh_token: str) -> dict[str, Any]:
         """
-        Create a secure random state parameter for CSRF protection.
+        Refresh an access token (ASYNC).
+
+        Args:
+            refresh_token: Refresh token
 
         Returns:
-            str: A URL-safe random string.
+            dict: New token response
+
+        Raises:
+            NotImplementedError: If provider doesn't support refresh
         """
-        return secrets.token_urlsafe(32)
+        raise NotImplementedError(
+            f"{self.__class__.__name__} does not support token refresh"
+        )
+
+    async def arevoke_token(self, token: str) -> dict[str, Any]:
+        """
+        Revoke an access or refresh token (ASYNC).
+
+        Args:
+            token: Token to revoke
+
+        Returns:
+            dict: Revocation response
+
+        Raises:
+            NotImplementedError: If provider doesn't support revocation
+        """
+        raise NotImplementedError(
+            f"{self.__class__.__name__} does not support token revocation"
+        )
+
+    async def _amake_request(
+        self,
+        method: HttpMethod,
+        url: str,
+        data: Optional[Any] = None,
+        headers: Optional[dict[str, str]] = None,
+        params: Optional[dict[str, str]] = None,
+        json: Optional[Any] = None,
+        error_message: str = "Request failed",
+    ) -> dict[str, Any]:
+        """
+        Make an async HTTP request using the configured async client.
+
+        Args:
+            method: HTTP method
+            url: Request URL
+            data: Form data
+            headers: HTTP headers
+            params: Query parameters
+            json: JSON body
+            error_message: Error message if request fails
+
+        Returns:
+            dict: Parsed JSON response
+
+        Raises:
+            PAuthError: If request fails
+        """
+        response: HTTPResponse = await self.async_http_client.request(
+            method=method,
+            url=url,
+            data=data,
+            headers=headers,
+            params=params,
+            json=json,
+        )
+
+        return self._validate_and_parse_response(response, error_message)
