@@ -1,0 +1,47 @@
+# Configuration for pull request labeler
+# See: https://github.com/actions/labeler
+
+# Add 'documentation' label to any changes to documentation files
+documentation:
+  - changed-files:
+    - any-glob-to-any-file: ['**/*.md', 'docs/**/*']
+
+# Add 'tests' label to any changes to test files
+tests:
+  - changed-files:
+    - any-glob-to-any-file: ['src/tests/**/*', '**/*test*.py']
+
+# Add 'dependencies' label to dependency updates
+dependencies:
+  - changed-files:
+    - any-glob-to-any-file: ['poetry.lock', 'pyproject.toml', 'setup.py', 'requirements*.txt']
+
+# Add 'client' label to changes in client code
+client:
+  - changed-files:
+    - any-glob-to-any-file: ['src/client/**/*']
+
+# Add 'providers' label to changes in provider code
+providers:
+  - changed-files:
+    - any-glob-to-any-file: ['src/providers/**/*']
+
+# Add 'integrations' label to changes in integrations
+integrations:
+  - changed-files:
+    - any-glob-to-any-file: ['src/integrations/**/*']
+
+# Add 'security' label to security-related changes
+security:
+  - changed-files:
+    - any-glob-to-any-file: ['src/utils/pkce.py', 'src/security/**/*']
+
+# Add 'ci/cd' label to GitHub Actions workflow changes
+ci/cd:
+  - changed-files:
+    - any-glob-to-any-file: ['.github/**/*']
+
+# Add 'examples' label to example code changes
+examples:
+  - changed-files:
+    - any-glob-to-any-file: ['src/examples/**/*', 'examples/**/*']
