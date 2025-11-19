@@ -4,7 +4,7 @@ Facebook OAuth 2.0 provider with unified sync/async support.
 
 from typing import Optional, Any
 from .base import BaseProvider
-from src.utils.http import HTTPClient, AsyncHTTPClient
+from src.http import HTTPClient, AsyncHTTPClient
 
 
 class FacebookProviderMixin:

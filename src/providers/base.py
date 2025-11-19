@@ -5,7 +5,7 @@ Stateless OAuth provider base class with unified sync/async support.
 from abc import ABC, abstractmethod
 from typing import Optional, Any
 from urllib.parse import urlencode
-from src.utils.http import HTTPClient, AsyncHTTPClient, HTTPResponse, HttpMethod
+from src.http import HTTPClient, AsyncHTTPClient, HTTPResponse, HttpMethod
 from src.exceptions import PAuthError
 
 
@@ -136,13 +136,13 @@ class BaseProvider(BaseProviderMixin, ABC):
         self.scopes = scopes or self._get_default_scopes()
 
         if http_client is None:
-            from src.utils.http import RequestsAdapter
+            from src.http import RequestsAdapter
 
             http_client = RequestsAdapter()
         self.http_client = http_client
 
         if async_http_client is None:
-            from src.utils.http import HttpxAdapter
+            from src.http import HttpxAdapter
 
             async_http_client = HttpxAdapter()
         self.async_http_client = async_http_client
