@@ -31,7 +31,7 @@ def __dir__():
 def _target_name(fullname: str) -> str:
     if fullname == _ALIAS_ROOT:
         return _TARGET_ROOT
-    suffix = fullname[len(_ALIAS_ROOT) + 1 :]
+    suffix = fullname[len(_ALIAS_ROOT) + 1:]
     return f"{_TARGET_ROOT}.{suffix}"
 
 

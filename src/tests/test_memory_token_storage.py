@@ -3,7 +3,6 @@ Comprehensive tests for MemoryTokenStorage.
 """
 
 import threading
-import time
 from datetime import datetime, timedelta, timezone
 
 import pytest
@@ -402,7 +401,7 @@ class TestThreadSafety:
             thread.join()
 
         # No exceptions should occur, final state is either saved or deleted
-        token = storage.get_token(user_id)
+        storage.get_token(user_id)
         # Token can be either present or absent, but no corruption
 
 

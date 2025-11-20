@@ -3,14 +3,14 @@ Comprehensive tests for OAuth2Client with mock providers.
 """
 
 from typing import Any, Optional
-from unittest.mock import AsyncMock, Mock, patch
+from unittest.mock import AsyncMock, Mock
 
 import pytest
 
 from src.client import OAuth2Client
 from src.exceptions import AuthorizationError, ConfigurationError, TokenError
 from src.http import AsyncHTTPClient, HTTPClient, HTTPResponse
-from src.models import OAuthSession, Providers, TokenResponse, UserInfo
+from src.models import OAuthSession, TokenResponse, UserInfo
 from src.providers.base import BaseProvider
 
 

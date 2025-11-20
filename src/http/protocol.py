@@ -35,7 +35,8 @@ class HTTPClient(Protocol):
         headers: Optional[dict[str, str]] = None,
         params: Optional[dict[str, str]] = None,
         json: Optional[Any] = None,
-    ) -> HTTPResponse: ...
+    ) -> HTTPResponse:
+        ...
 
 
 class AsyncHTTPClient(Protocol):
@@ -49,4 +50,5 @@ class AsyncHTTPClient(Protocol):
         headers: Optional[dict[str, str]] = None,
         params: Optional[dict[str, str]] = None,
         json: Optional[Any] = None,
-    ) -> HTTPResponse: ...
+    ) -> HTTPResponse:
+        ...
