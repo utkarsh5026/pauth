@@ -3,6 +3,7 @@ PAuth Exception Hierarchy
 
 This module contains all custom exceptions used by the PAuth library.
 """
+
 from typing import Optional
 
 
@@ -31,6 +32,7 @@ class AuthorizationError(PAuthError):
     - Invalid authorization request
     - Authorization code is invalid or expired
     """
+
     pass
 
 
@@ -43,6 +45,7 @@ class TokenError(PAuthError):
     - Token refresh fails
     - Token is invalid or malformed
     """
+
     pass
 
 
@@ -53,6 +56,7 @@ class InvalidStateError(PAuthError):
     This is a security-critical error that indicates a potential CSRF attack
     or session tampering.
     """
+
     pass
 
 
@@ -88,6 +92,7 @@ class ConfigurationError(PAuthError):
     - Invalid redirect_uri
     - Missing required configuration parameters
     """
+
     pass
 
 
@@ -100,6 +105,7 @@ class TokenStorageError(PAuthError):
     - Storage operations fail (save, retrieve, delete)
     - Storage corruption
     """
+
     pass
 
 
@@ -112,6 +118,7 @@ class PKCEError(PAuthError):
     - Code challenge generation fails
     - PKCE validation fails
     """
+
     pass
 
 
@@ -124,6 +131,7 @@ class ScopeError(PAuthError):
     - Insufficient scopes granted
     - Scope format is invalid
     """
+
     pass
 
 
@@ -136,6 +144,5 @@ class UserInfoError(PAuthError):
     - Invalid access token for user info
     - User info response is malformed
     """
+
     pass
-
-

@@ -58,16 +58,18 @@ def generate_code_challenge(code_verifier: str, method: str = "S256") -> str:
         - plain method: code_verifier (not recommended for production)
     """
     if method == "S256":
-        verifier_bytes = code_verifier.encode('ascii')
+        verifier_bytes = code_verifier.encode("ascii")
         sha256_hash = hashlib.sha256(verifier_bytes).digest()
-        base64_encoded = base64.urlsafe_b64encode(sha256_hash).decode('utf-8')
+        base64_encoded = base64.urlsafe_b64encode(sha256_hash).decode("utf-8")
         # Remove padding as per RFC 7636
-        code_challenge = base64_encoded.rstrip('=')
+        code_challenge = base64_encoded.rstrip("=")
         return code_challenge
     elif method == "plain":
         return code_verifier
     else:
-        raise ValueError(f"Unsupported code challenge method: {method}. Use 'S256' or 'plain'.")
+        raise ValueError(
+            f"Unsupported code challenge method: {method}. Use 'S256' or 'plain'."
+        )
 
 
 def generate_pkce_pair(length: int = 64, method: str = "S256") -> Tuple[str, str]:
@@ -122,5 +124,7 @@ def validate_code_verifier(code_verifier: str) -> bool:
         return False
 
     # Check for valid unreserved characters
-    valid_chars = set("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~")
+    valid_chars = set(
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~"
+    )
     return all(c in valid_chars for c in code_verifier)

@@ -34,7 +34,12 @@ class MockProvider(BaseProvider):
         async_http_client: Optional[AsyncHTTPClient] = None,
     ):
         super().__init__(
-            client_id, client_secret, redirect_uri, scopes, http_client, async_http_client
+            client_id,
+            client_secret,
+            redirect_uri,
+            scopes,
+            http_client,
+            async_http_client,
         )
         self.authorization_endpoint = "https://mock.provider.com/oauth/authorize"
         self.token_endpoint = "https://mock.provider.com/oauth/token"
@@ -104,7 +109,12 @@ class MockProviderWithRefresh(MockProvider):
         async_http_client: Optional[AsyncHTTPClient] = None,
     ):
         super().__init__(
-            client_id, client_secret, redirect_uri, scopes, http_client, async_http_client
+            client_id,
+            client_secret,
+            redirect_uri,
+            scopes,
+            http_client,
+            async_http_client,
         )
         self.revocation_endpoint = "https://mock.provider.com/oauth/revoke"
 
@@ -376,7 +386,9 @@ class TestOAuth2ClientInitialization:
         assert client.redirect_uri == "https://example.com/callback"
         assert client.provider == mock_provider
 
-    def test_init_with_http_clients(self, mock_provider, mock_http_client, mock_async_http_client):
+    def test_init_with_http_clients(
+        self, mock_provider, mock_http_client, mock_async_http_client
+    ):
         """Test initialization with custom HTTP clients."""
         client = OAuth2Client(
             provider=mock_provider,
@@ -390,7 +402,9 @@ class TestOAuth2ClientInitialization:
         assert client.http_client == mock_http_client
         assert client.async_http_client == mock_async_http_client
 
-    def test_init_passes_http_clients_to_provider(self, mock_http_client, mock_async_http_client):
+    def test_init_passes_http_clients_to_provider(
+        self, mock_http_client, mock_async_http_client
+    ):
         """Test that HTTP clients are passed to provider when instantiated."""
         # Create a provider instance with custom HTTP clients
         provider = MockProvider(
@@ -555,7 +569,9 @@ class TestTokenExchange:
         assert isinstance(tokens, TokenResponse)
         assert tokens.access_token == "pkce_access_token"
 
-    def test_exchange_code_pkce_missing_verifier_raises_error(self, oauth_client_with_pkce):
+    def test_exchange_code_pkce_missing_verifier_raises_error(
+        self, oauth_client_with_pkce
+    ):
         """Test that PKCE exchange without verifier raises ConfigurationError."""
         with pytest.raises(ConfigurationError, match="requires PKCE"):
             oauth_client_with_pkce.exchange_code("test_auth_code")
@@ -613,13 +629,17 @@ class TestAsyncTokenExchange:
     async def test_aexchange_code_with_pkce_using_session(self, oauth_client_with_pkce):
         """Test async code exchange with PKCE using session."""
         session = oauth_client_with_pkce.get_authorization_session()
-        tokens = await oauth_client_with_pkce.aexchange_code("test_auth_code", session=session)
+        tokens = await oauth_client_with_pkce.aexchange_code(
+            "test_auth_code", session=session
+        )
 
         assert isinstance(tokens, TokenResponse)
         assert tokens.access_token == "async_pkce_access_token"
 
     @pytest.mark.asyncio
-    async def test_aexchange_code_with_pkce_explicit_verifier(self, oauth_client_with_pkce):
+    async def test_aexchange_code_with_pkce_explicit_verifier(
+        self, oauth_client_with_pkce
+    ):
         """Test async code exchange with PKCE using explicit verifier."""
         tokens = await oauth_client_with_pkce.aexchange_code(
             "test_auth_code", code_verifier="explicit_code_verifier"
@@ -629,7 +649,9 @@ class TestAsyncTokenExchange:
         assert tokens.access_token == "async_pkce_access_token"
 
     @pytest.mark.asyncio
-    async def test_aexchange_code_pkce_missing_verifier_raises_error(self, oauth_client_with_pkce):
+    async def test_aexchange_code_pkce_missing_verifier_raises_error(
+        self, oauth_client_with_pkce
+    ):
         """Test that async PKCE exchange without verifier raises ConfigurationError."""
         with pytest.raises(ConfigurationError, match="requires PKCE"):
             await oauth_client_with_pkce.aexchange_code("test_auth_code")
@@ -701,7 +723,9 @@ class TestUserInfo:
             redirect_uri="https://example.com/callback",
         )
 
-        with pytest.raises(AuthorizationError, match="Error retrieving user information"):
+        with pytest.raises(
+            AuthorizationError, match="Error retrieving user information"
+        ):
             client.get_user_info("empty_response")
 
     def test_get_user_info_provider_error_raises_authorization_error(self):
@@ -718,7 +742,9 @@ class TestUserInfo:
             redirect_uri="https://example.com/callback",
         )
 
-        with pytest.raises(AuthorizationError, match="Error retrieving user information"):
+        with pytest.raises(
+            AuthorizationError, match="Error retrieving user information"
+        ):
             client.get_user_info("invalid_token")
 
 
@@ -750,7 +776,9 @@ class TestAsyncUserInfo:
             redirect_uri="https://example.com/callback",
         )
 
-        with pytest.raises(AuthorizationError, match="Error retrieving user information"):
+        with pytest.raises(
+            AuthorizationError, match="Error retrieving user information"
+        ):
             await client.aget_user_info("empty_response")
 
     @pytest.mark.asyncio
@@ -768,7 +796,9 @@ class TestAsyncUserInfo:
             redirect_uri="https://example.com/callback",
         )
 
-        with pytest.raises(AuthorizationError, match="Error retrieving user information"):
+        with pytest.raises(
+            AuthorizationError, match="Error retrieving user information"
+        ):
             await client.aget_user_info("invalid_token")
 
 
@@ -792,7 +822,9 @@ class TestTokenRefresh:
         self, mock_provider_with_refresh
     ):
         """Test that provider errors during refresh raise AuthorizationError."""
-        mock_provider_with_refresh.refresh_token = Mock(side_effect=Exception("Refresh failed"))
+        mock_provider_with_refresh.refresh_token = Mock(
+            side_effect=Exception("Refresh failed")
+        )
 
         client = OAuth2Client(
             provider=mock_provider_with_refresh,
@@ -804,7 +836,9 @@ class TestTokenRefresh:
         with pytest.raises(AuthorizationError, match="Error refreshing tokens"):
             client.refresh_token("mock_refresh_token")
 
-    def test_refresh_token_empty_response_raises_error(self, mock_provider_with_refresh):
+    def test_refresh_token_empty_response_raises_error(
+        self, mock_provider_with_refresh
+    ):
         """Test that empty refresh response raises TokenError."""
         mock_provider_with_refresh.refresh_token = Mock(return_value=None)
 
@@ -825,7 +859,9 @@ class TestAsyncTokenRefresh:
     @pytest.mark.asyncio
     async def test_arefresh_token_success(self, oauth_client_with_refresh):
         """Test successful async token refresh."""
-        new_tokens = await oauth_client_with_refresh.arefresh_token("mock_refresh_token")
+        new_tokens = await oauth_client_with_refresh.arefresh_token(
+            "mock_refresh_token"
+        )
 
         assert isinstance(new_tokens, TokenResponse)
         assert new_tokens.access_token == "async_new_mock_access_token"
@@ -857,7 +893,9 @@ class TestAsyncTokenRefresh:
             await client.arefresh_token("mock_refresh_token")
 
     @pytest.mark.asyncio
-    async def test_arefresh_token_empty_response_raises_error(self, mock_provider_with_refresh):
+    async def test_arefresh_token_empty_response_raises_error(
+        self, mock_provider_with_refresh
+    ):
         """Test that empty async refresh response raises TokenError."""
         mock_provider_with_refresh.arefresh_token = AsyncMock(return_value=None)
 
@@ -883,7 +921,9 @@ class TestTokenRevocation:
 
     def test_revoke_token_not_supported_raises_error(self, oauth_client):
         """Test that revoke on unsupported provider raises ConfigurationError."""
-        with pytest.raises(ConfigurationError, match="does not support token revocation"):
+        with pytest.raises(
+            ConfigurationError, match="does not support token revocation"
+        ):
             oauth_client.revoke_token("mock_access_token")
 
     def test_revoke_token_provider_error_raises_authorization_error(
@@ -906,7 +946,9 @@ class TestTokenRevocation:
 
     def test_revoke_token_unsuccessful_response(self, mock_provider_with_revocation):
         """Test revocation with unsuccessful response."""
-        mock_provider_with_revocation.revoke_token = Mock(return_value={"success": False})
+        mock_provider_with_revocation.revoke_token = Mock(
+            return_value={"success": False}
+        )
 
         client = OAuth2Client(
             provider=mock_provider_with_revocation,
@@ -932,7 +974,9 @@ class TestAsyncTokenRevocation:
     @pytest.mark.asyncio
     async def test_arevoke_token_not_supported_raises_error(self, oauth_client):
         """Test that async revoke on unsupported provider raises ConfigurationError."""
-        with pytest.raises(ConfigurationError, match="does not support token revocation"):
+        with pytest.raises(
+            ConfigurationError, match="does not support token revocation"
+        ):
             await oauth_client.arevoke_token("mock_access_token")
 
     @pytest.mark.asyncio
@@ -955,7 +999,9 @@ class TestAsyncTokenRevocation:
             await client.arevoke_token("mock_access_token")
 
     @pytest.mark.asyncio
-    async def test_arevoke_token_unsuccessful_response(self, mock_provider_with_revocation):
+    async def test_arevoke_token_unsuccessful_response(
+        self, mock_provider_with_revocation
+    ):
         """Test async revocation with unsuccessful response."""
         mock_provider_with_revocation.arevoke_token = AsyncMock(
             return_value={"success": False}
@@ -1043,14 +1089,18 @@ class TestIntegrationScenarios:
         assert user_info.email == "async_user@example.com"
 
     @pytest.mark.asyncio
-    async def test_complete_async_oauth_flow_with_refresh(self, oauth_client_with_refresh):
+    async def test_complete_async_oauth_flow_with_refresh(
+        self, oauth_client_with_refresh
+    ):
         """Test async OAuth flow with token refresh."""
         # Get tokens
         tokens = await oauth_client_with_refresh.aexchange_code("auth_code")
         assert tokens.access_token == "async_mock_access_token"
 
         # Refresh tokens
-        new_tokens = await oauth_client_with_refresh.arefresh_token(tokens.refresh_token)
+        new_tokens = await oauth_client_with_refresh.arefresh_token(
+            tokens.refresh_token
+        )
         assert new_tokens.access_token == "async_new_mock_access_token"
 
     @pytest.mark.asyncio
@@ -1061,7 +1111,9 @@ class TestIntegrationScenarios:
         assert "code_challenge=" in session.url
 
         # Step 2: Exchange code (async)
-        tokens = await oauth_client_with_pkce.aexchange_code("auth_code", session=session)
+        tokens = await oauth_client_with_pkce.aexchange_code(
+            "auth_code", session=session
+        )
         assert tokens.access_token == "async_pkce_access_token"
 
         # Step 3: Get user info (async)

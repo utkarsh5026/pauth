@@ -10,7 +10,7 @@ from src.utils.pkce import (
     generate_code_verifier,
     generate_code_challenge,
     generate_pkce_pair,
-    validate_code_verifier
+    validate_code_verifier,
 )
 
 
@@ -50,22 +50,30 @@ class TestGenerateCodeVerifier:
 
     def test_length_below_minimum(self):
         """Test that length below minimum raises ValueError."""
-        with pytest.raises(ValueError, match="Code verifier length must be between 43 and 128"):
+        with pytest.raises(
+            ValueError, match="Code verifier length must be between 43 and 128"
+        ):
             generate_code_verifier(42)
 
     def test_length_above_maximum(self):
         """Test that length above maximum raises ValueError."""
-        with pytest.raises(ValueError, match="Code verifier length must be between 43 and 128"):
+        with pytest.raises(
+            ValueError, match="Code verifier length must be between 43 and 128"
+        ):
             generate_code_verifier(129)
 
     def test_negative_length(self):
         """Test that negative length raises ValueError."""
-        with pytest.raises(ValueError, match="Code verifier length must be between 43 and 128"):
+        with pytest.raises(
+            ValueError, match="Code verifier length must be between 43 and 128"
+        ):
             generate_code_verifier(-1)
 
     def test_zero_length(self):
         """Test that zero length raises ValueError."""
-        with pytest.raises(ValueError, match="Code verifier length must be between 43 and 128"):
+        with pytest.raises(
+            ValueError, match="Code verifier length must be between 43 and 128"
+        ):
             generate_code_verifier(0)
 
     def test_randomness(self):
@@ -80,13 +88,13 @@ class TestGenerateCodeVerifier:
         verifier = generate_code_verifier()
 
         # URL-safe base64 characters: A-Z, a-z, 0-9, -, _
-        url_safe_pattern = re.compile(r'^[A-Za-z0-9\-_]+$')
+        url_safe_pattern = re.compile(r"^[A-Za-z0-9\-_]+$")
         assert url_safe_pattern.match(verifier)
 
     def test_no_padding(self):
         """Test that verifier doesn't contain base64 padding."""
         verifier = generate_code_verifier()
-        assert '=' not in verifier
+        assert "=" not in verifier
 
 
 class TestGenerateCodeChallenge:
@@ -98,9 +106,9 @@ class TestGenerateCodeChallenge:
         challenge = generate_code_challenge(verifier, "S256")
 
         # Manually compute expected challenge
-        verifier_bytes = verifier.encode('ascii')
+        verifier_bytes = verifier.encode("ascii")
         sha256_hash = hashlib.sha256(verifier_bytes).digest()
-        expected = base64.urlsafe_b64encode(sha256_hash).decode('utf-8').rstrip('=')
+        expected = base64.urlsafe_b64encode(sha256_hash).decode("utf-8").rstrip("=")
 
         assert challenge == expected
 
@@ -139,7 +147,7 @@ class TestGenerateCodeChallenge:
         verifier = generate_code_verifier()
         challenge = generate_code_challenge(verifier, "S256")
 
-        assert '=' not in challenge
+        assert "=" not in challenge
 
     def test_s256_deterministic(self):
         """Test that S256 method is deterministic."""
@@ -238,7 +246,9 @@ class TestGeneratePkcePair:
 
     def test_invalid_length(self):
         """Test that invalid length raises ValueError."""
-        with pytest.raises(ValueError, match="Code verifier length must be between 43 and 128"):
+        with pytest.raises(
+            ValueError, match="Code verifier length must be between 43 and 128"
+        ):
             generate_pkce_pair(length=30)
 
     def test_invalid_method(self):
@@ -282,71 +292,101 @@ class TestValidateCodeVerifier:
     def test_valid_verifier_minimum_length(self):
         """Test validation of verifier with minimum length."""
         # Create a valid 43-character verifier
-        verifier = 'a' * 43
+        verifier = "a" * 43
         assert validate_code_verifier(verifier) is True
 
     def test_valid_verifier_maximum_length(self):
         """Test validation of verifier with maximum length."""
         # Create a valid 128-character verifier
-        verifier = 'a' * 128
+        verifier = "a" * 128
         assert validate_code_verifier(verifier) is True
 
     def test_invalid_too_short(self):
         """Test validation fails for verifier that's too short."""
-        verifier = 'a' * 42
+        verifier = "a" * 42
         assert validate_code_verifier(verifier) is False
 
     def test_invalid_too_long(self):
         """Test validation fails for verifier that's too long."""
-        verifier = 'a' * 129
+        verifier = "a" * 129
         assert validate_code_verifier(verifier) is False
 
     def test_invalid_empty_string(self):
         """Test validation fails for empty string."""
-        assert validate_code_verifier('') is False
+        assert validate_code_verifier("") is False
 
     def test_valid_unreserved_characters(self):
         """Test validation with all valid unreserved characters."""
         # Valid unreserved characters: A-Z, a-z, 0-9, -, ., _, ~
-        verifier = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~'
+        verifier = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~"
         assert validate_code_verifier(verifier) is True
 
     def test_invalid_special_characters(self):
         """Test validation fails for invalid special characters."""
-        invalid_chars = ['!', '@', '#', '$', '%', '^', '&', '*', '(', ')', '+', '=', '[', ']', '{', '}', '|', '\\', ':', ';', '"', "'", '<', '>', ',', '?', '/']
+        invalid_chars = [
+            "!",
+            "@",
+            "#",
+            "$",
+            "%",
+            "^",
+            "&",
+            "*",
+            "(",
+            ")",
+            "+",
+            "=",
+            "[",
+            "]",
+            "{",
+            "}",
+            "|",
+            "\\",
+            ":",
+            ";",
+            '"',
+            "'",
+            "<",
+            ">",
+            ",",
+            "?",
+            "/",
+        ]
 
         for char in invalid_chars:
-            verifier = 'a' * 42 + char  # 43 characters total
-            assert validate_code_verifier(verifier) is False, f"Validation should fail for character: {char}"
+            verifier = "a" * 42 + char  # 43 characters total
+            assert (
+                validate_code_verifier(verifier) is False
+            ), f"Validation should fail for character: {char}"
 
     def test_invalid_spaces(self):
         """Test validation fails for verifier with spaces."""
-        verifier = 'a' * 40 + ' ' + 'a' * 2  # 43 characters including space
+        verifier = "a" * 40 + " " + "a" * 2  # 43 characters including space
         assert validate_code_verifier(verifier) is False
 
     def test_invalid_padding(self):
         """Test validation fails for verifier with base64 padding."""
-        verifier = 'a' * 42 + '='  # 43 characters with padding
+        verifier = "a" * 42 + "="  # 43 characters with padding
         assert validate_code_verifier(verifier) is False
 
     def test_valid_hyphen(self):
         """Test validation succeeds for verifier with hyphens."""
-        verifier = 'a-b-c-' * 11  # Creates a 43+ character string with hyphens
+        verifier = "a-b-c-" * 11  # Creates a 43+ character string with hyphens
         assert validate_code_verifier(verifier) is True
 
     def test_valid_underscore(self):
         """Test validation succeeds for verifier with underscores."""
-        verifier = 'a_b_c_' * 11  # Creates a 43+ character string with underscores
+        verifier = "a_b_c_" * 11  # Creates a 43+ character string with underscores
         assert validate_code_verifier(verifier) is True
 
     def test_valid_tilde(self):
         """Test validation succeeds for verifier with tildes."""
-        verifier = 'a~b~c~' * 11  # Creates a 43+ character string with tildes
+        verifier = "a~b~c~" * 11  # Creates a 43+ character string with tildes
         assert validate_code_verifier(verifier) is True
 
     def test_valid_period(self):
         """Test validation succeeds for verifier with periods."""
-        verifier = 'a.b.c.' * 11  # Creates a 43+ character string with periods
+        verifier = "a.b.c." * 11  # Creates a 43+ character string with periods
         assert validate_code_verifier(verifier) is True
 
     def test_generated_verifiers_are_valid(self):
@@ -357,22 +397,22 @@ class TestValidateCodeVerifier:
             verifier = generate_code_verifier(length)
             # Verifiers from token_urlsafe may exceed 128 chars for larger byte counts
             # so we just verify they contain valid characters
-            url_safe_pattern = re.compile(r'^[A-Za-z0-9\-_]+$')
+            url_safe_pattern = re.compile(r"^[A-Za-z0-9\-_]+$")
             assert url_safe_pattern.match(verifier)
 
     def test_unicode_characters(self):
         """Test validation fails for unicode characters."""
-        verifier = 'a' * 40 + 'é' + 'a' * 2  # 43 characters with unicode
+        verifier = "a" * 40 + "é" + "a" * 2  # 43 characters with unicode
         assert validate_code_verifier(verifier) is False
 
     def test_newline_characters(self):
         """Test validation fails for newline characters."""
-        verifier = 'a' * 42 + '\n'  # 43 characters with newline
+        verifier = "a" * 42 + "\n"  # 43 characters with newline
         assert validate_code_verifier(verifier) is False
 
     def test_tab_characters(self):
         """Test validation fails for tab characters."""
-        verifier = 'a' * 42 + '\t'  # 43 characters with tab
+        verifier = "a" * 42 + "\t"  # 43 characters with tab
         assert validate_code_verifier(verifier) is False
 
 
@@ -391,9 +431,9 @@ class TestRFC7636Compliance:
         challenge = generate_code_challenge(verifier, "S256")
 
         # Should be URL-safe base64 without padding
-        url_safe_pattern = re.compile(r'^[A-Za-z0-9\-_]+$')
+        url_safe_pattern = re.compile(r"^[A-Za-z0-9\-_]+$")
         assert url_safe_pattern.match(challenge)
-        assert '=' not in challenge
+        assert "=" not in challenge
 
     def test_s256_transformation(self):
         """Test S256 transformation matches RFC 7636 specification."""
@@ -402,9 +442,11 @@ class TestRFC7636Compliance:
 
         # Expected challenge per RFC 7636 example
         # BASE64URL(SHA256(ASCII(code_verifier)))
-        verifier_bytes = verifier.encode('ascii')
+        verifier_bytes = verifier.encode("ascii")
         sha256_hash = hashlib.sha256(verifier_bytes).digest()
-        expected_challenge = base64.urlsafe_b64encode(sha256_hash).decode('utf-8').rstrip('=')
+        expected_challenge = (
+            base64.urlsafe_b64encode(sha256_hash).decode("utf-8").rstrip("=")
+        )
 
         challenge = generate_code_challenge(verifier, "S256")
         assert challenge == expected_challenge
@@ -427,7 +469,7 @@ class TestRFC7636Compliance:
         verifier = generate_code_verifier()
 
         # Should only contain unreserved characters
-        unreserved_pattern = re.compile(r'^[A-Za-z0-9\-._~]+$')
+        unreserved_pattern = re.compile(r"^[A-Za-z0-9\-._~]+$")
         assert unreserved_pattern.match(verifier)
 
 
@@ -456,7 +498,7 @@ class TestEdgeCases:
 
     def test_very_long_verifier_validation(self):
         """Test validation with extremely long string."""
-        verifier = 'a' * 10000
+        verifier = "a" * 10000
         assert validate_code_verifier(verifier) is False
 
     def test_concurrent_generation(self):

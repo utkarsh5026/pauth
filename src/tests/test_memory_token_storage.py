@@ -26,7 +26,7 @@ def sample_token():
         refresh_token="test_refresh_token_456",
         scope="read write",
         id_token="test_id_token_789",
-        raw_response={"custom_field": "custom_value"}
+        raw_response={"custom_field": "custom_value"},
     )
 
 
@@ -39,7 +39,7 @@ def expired_token():
         token_type="Bearer",
         expires_in=3600,
         refresh_token="expired_refresh_token",
-        issued_at=past_time
+        issued_at=past_time,
     )
 
 
@@ -89,7 +89,7 @@ class TestBasicOperations:
         new_token = TokenResponse(
             access_token="new_access_token",
             token_type="Bearer",
-            refresh_token="new_refresh_token"
+            refresh_token="new_refresh_token",
         )
         storage.update_token(user_id, new_token)
 
@@ -428,7 +428,7 @@ class TestTokenWithDifferentAttributes:
             refresh_token="full_refresh",
             scope="read write admin",
             id_token="full_id",
-            raw_response={"extra": "data", "nested": {"key": "value"}}
+            raw_response={"extra": "data", "nested": {"key": "value"}},
         )
 
         storage.save_token("user123", full_token)
@@ -455,8 +455,7 @@ class TestTokenWithDifferentAttributes:
     def test_token_with_unicode(self, storage):
         """Test storing tokens with unicode characters."""
         unicode_token = TokenResponse(
-            access_token="token_with_émojis_🔐",
-            refresh_token="refresh_中文_русский"
+            access_token="token_with_émojis_🔐", refresh_token="refresh_中文_русский"
         )
 
         storage.save_token("user_unicode", unicode_token)

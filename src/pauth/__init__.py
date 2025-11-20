@@ -31,7 +31,7 @@ def __dir__():
 def _target_name(fullname: str) -> str:
     if fullname == _ALIAS_ROOT:
         return _TARGET_ROOT
-    suffix = fullname[len(_ALIAS_ROOT) + 1:]
+    suffix = fullname[len(_ALIAS_ROOT) + 1 :]
     return f"{_TARGET_ROOT}.{suffix}"
 
 
@@ -53,9 +53,7 @@ class _AliasLoader(importlib.abc.Loader):
 class _AliasFinder(importlib.abc.MetaPathFinder):
     # type: ignore[override]
     def find_spec(self, fullname: str, path, target=None):
-        if not (
-            fullname == _ALIAS_ROOT or fullname.startswith(f"{_ALIAS_ROOT}.")
-        ):
+        if not (fullname == _ALIAS_ROOT or fullname.startswith(f"{_ALIAS_ROOT}.")):
             return None
 
         target_name = _target_name(fullname)
