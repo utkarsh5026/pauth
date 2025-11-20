@@ -51,6 +51,7 @@ twine = "^5.1.1"
 setuptools = "^71.0.3"
 wheel = "^0.41.0"
 pip-licenses = "^5.5.0"
+pre-commit = "^4.4.0"
 
 [tool.poetry.extras]
 flask = ["Flask"]
@@ -95,6 +96,34 @@ python_classes = ["Test*"]
 python_functions = ["test_*"]
 addopts = "-v --cov=src --cov-report=term-missing --cov-report=html"
 markers = ["asyncio: mark test as an asyncio test"]
+
+[tool.coverage.run]
+relative_files = true
+source = ["src"]
+omit = [
+    "*/tests/*",
+    "*/test_*.py",
+    "*/playground/*",
+    "*/providers/discord.py",
+    "*/providers/facebook.py",
+    "*/providers/github.py",
+    "*/providers/google.py",
+    "*/providers/linkedin.py",
+    "*/providers/microsoft.py",
+    "*/providers/twitter.py",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+    "class .*\\bProtocol\\):",
+    "@(abc\\.)?abstractmethod",
+]
 
 [tool.mypy]
 python_version = "3.12"

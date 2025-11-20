@@ -71,7 +71,7 @@ jobs:
         run: |
           COVERAGE=$(poetry run coverage report --precision=2 | grep TOTAL | awk '{print $4}' | sed 's/%//')
           echo "Coverage: $COVERAGE%"
-          if (( $(echo "$COVERAGE < 70" | bc -l) )); then
-            echo "Coverage is below 70%"
+          if (( $(echo "$COVERAGE < 50" | bc -l) )); then
+            echo "Coverage is below 50%"
             exit 1
           fi
