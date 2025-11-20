@@ -2,10 +2,10 @@
 OAuth session models for managing temporary flow state.
 """
 
-from dataclasses import dataclass, field, asdict
-from typing import Optional, Any
-from datetime import datetime, timedelta, timezone
 import secrets
+from dataclasses import asdict, dataclass, field
+from datetime import datetime, timedelta, timezone
+from typing import Any, Optional
 
 
 @dataclass

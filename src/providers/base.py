@@ -2,14 +2,15 @@
 Stateless OAuth provider base class with unified sync/async support.
 """
 
-from abc import ABC, abstractmethod
-from typing import Optional, Any
-from urllib.parse import urlencode
-import secrets
-import hashlib
 import base64
-from src.http import HTTPClient, AsyncHTTPClient, HTTPResponse, HttpMethod
+import hashlib
+import secrets
+from abc import ABC, abstractmethod
+from typing import Any, Optional
+from urllib.parse import urlencode
+
 from src.exceptions import PAuthError
+from src.http import AsyncHTTPClient, HTTPClient, HttpMethod, HTTPResponse
 from src.models.session import OAuthSession
 
 

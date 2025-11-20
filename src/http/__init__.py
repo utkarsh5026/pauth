@@ -1,6 +1,5 @@
-from .adapters import RequestsAdapter, HttpxAdapter
-from .protocol import HTTPClient, AsyncHTTPClient, HttpMethod, HTTPResponse
-
+from .adapters import HttpxAdapter, RequestsAdapter
+from .protocol import AsyncHTTPClient, HTTPClient, HttpMethod, HTTPResponse
 
 __all__ = [
     "HTTPClient",

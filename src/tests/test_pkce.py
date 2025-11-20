@@ -2,13 +2,15 @@
 Comprehensive tests for PKCE utilities.
 """
 
-import pytest
 import base64
 import hashlib
 import re
+
+import pytest
+
 from src.utils.pkce import (
-    generate_code_verifier,
     generate_code_challenge,
+    generate_code_verifier,
     generate_pkce_pair,
     validate_code_verifier,
 )

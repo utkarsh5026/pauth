@@ -1,7 +1,8 @@
 import logging
-import requests
-from typing import Any, Optional, Literal
 from collections.abc import Mapping
+from typing import Any, Literal, Optional
+
+import requests
 
 
 def make_request(
