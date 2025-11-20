@@ -7,13 +7,13 @@ from typing import Type
 
 from src.providers import (
     BaseProvider,
-    GoogleProvider,
-    GitHubProvider,
-    FacebookProvider,
-    TwitterProvider,
-    MicrosoftProvider,
-    LinkedInProvider,
     DiscordProvider,
+    FacebookProvider,
+    GitHubProvider,
+    GoogleProvider,
+    LinkedInProvider,
+    MicrosoftProvider,
+    TwitterProvider,
 )
 
 

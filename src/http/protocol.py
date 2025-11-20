@@ -1,5 +1,5 @@
-from typing import Protocol, Literal, Any, Optional
 from dataclasses import dataclass
+from typing import Any, Literal, Optional, Protocol
 
 HttpMethod = Literal["GET", "POST", "PUT", "DELETE", "PATCH"]
 

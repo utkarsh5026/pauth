@@ -1,5 +1,6 @@
 from typing import Any, Optional
-from .protocol import HTTPClient, HttpMethod, AsyncHTTPClient, HTTPResponse
+
+from .protocol import AsyncHTTPClient, HTTPClient, HttpMethod, HTTPResponse
 
 
 class RequestsAdapter(HTTPClient):

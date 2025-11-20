@@ -3,9 +3,11 @@ GitHub OAuth 2.0 provider with unified sync/async support.
 """
 
 import base64
-from typing import Optional, Any
+from typing import Any, Optional
+
+from src.http import AsyncHTTPClient, HTTPClient
+
 from .base import BaseProvider
-from src.http import HTTPClient, AsyncHTTPClient
 
 
 class GitHubProviderMixin:

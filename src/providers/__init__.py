@@ -1,10 +1,10 @@
 from .base import BaseProvider
+from .discord import DiscordProvider
 from .facebook import FacebookProvider
 from .github import GitHubProvider
 from .google import GoogleProvider
-from .microsoft import MicrosoftProvider
 from .linkedin import LinkedInProvider
-from .discord import DiscordProvider
+from .microsoft import MicrosoftProvider
 from .twitter import TwitterProvider
 
 __all__ = [
