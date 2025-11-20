@@ -30,6 +30,8 @@ exclude =
 # Per-file ignores
 per-file-ignores =
     __init__.py:F401
+    # E704: Protocol classes use ellipsis on same line (Black formatting)
+    */protocol.py:E704
 
 # Maximum complexity
 max-complexity = 10
