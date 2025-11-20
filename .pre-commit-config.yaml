@@ -1,0 +1,44 @@
+# Pre-commit hooks configuration
+# See https://pre-commit.com for more information
+# Uses local hooks to avoid SSL/network issues
+
+repos:
+  # Use local tools installed via Poetry
+  - repo: local
+    hooks:
+      # Black - Code formatter
+      - id: black
+        name: black
+        entry: poetry run black
+        language: system
+        types: [python]
+
+      # isort - Import sorting
+      - id: isort
+        name: isort
+        entry: poetry run isort
+        language: system
+        types: [python]
+
+      # Flake8 - Linting
+      - id: flake8
+        name: flake8
+        entry: poetry run flake8
+        language: system
+        types: [python]
+        args: ['--config=.flake8']
+
+  # General file checks (lightweight, no SSL issues)
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+        exclude: ^mkdocs\.yml$
+      - id: check-added-large-files
+        args: ['--maxkb=1000']
+      - id: check-merge-conflict
+      - id: check-toml
+      - id: debug-statements
+      - id: mixed-line-ending
