@@ -154,6 +154,8 @@ urlpatterns = [
 
 ### 4. Create Templates
 
+{% raw %}
+
 ```html
 <!-- templates/home.html -->
 {% if user.is_authenticated %}
@@ -164,6 +166,8 @@ urlpatterns = [
     <a href="{% url 'oauth_login' 'github' %}">Login with GitHub</a>
 {% endif %}
 ```
+
+{% endraw %}
 
 ## Custom User Model
 
