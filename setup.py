@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="pauth",
-    version="0.1.0",
+    version="0.2.0",
     author="Utkarsh Priyadarshi",
     author_email="utkarshpriyadarshi5026@gmail.com",
     description="A Python library for handling OAuth 2.0 authentication with multiple providers.",
