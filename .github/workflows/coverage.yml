@@ -61,7 +61,7 @@ jobs:
           MINIMUM_ORANGE: 60
 
       - name: Upload HTML coverage report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: coverage-report
           path: htmlcov/

@@ -93,7 +93,7 @@ jobs:
           safety check --file requirements-dev.txt || true
 
       - name: Upload Safety results
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: safety-results
@@ -127,7 +127,7 @@ jobs:
           poetry run pip-audit --desc
 
       - name: Upload pip-audit results
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: pip-audit-results
@@ -194,7 +194,7 @@ jobs:
           cat licenses.md
 
       - name: Upload license report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: license-report
           path: licenses.md
