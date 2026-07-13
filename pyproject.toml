@@ -50,7 +50,7 @@ isort = "^5.13.0"
 twine = "^5.1.1"
 setuptools = "^71.0.3"
 wheel = "^0.41.0"
-pip-licenses = "^5.5.0"
+pip-licenses = "^5.5.5"
 pre-commit = "^4.4.0"
 
 [tool.poetry.extras]
